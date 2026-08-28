@@ -7,6 +7,15 @@ from .base import *  # noqa: F401,F403
 
 DEBUG = False
 
+# Allowed hosts & CSRF for Render
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*,gig-saarthi.onrender.com,.onrender.com,localhost,127.0.0.1', cast=Csv())
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://gig-saarthi.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
