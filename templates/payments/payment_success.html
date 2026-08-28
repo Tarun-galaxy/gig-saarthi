@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Payment Successful" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 sm:px-6 py-16">
+    <div class="bg-white rounded-xl shadow-md p-8 text-center">
+        <div class="text-6xl mb-4">✅</div>
+        <h1 class="text-3xl font-bold text-green-600 mb-2">{% trans "Payment Successful!" %}</h1>
+        <p class="text-gray-600 mb-6">{% trans "Thank you for your payment. Your worker will be paid shortly." %}</p>
+
+        {% if invoice %}
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Invoice" %}</span>
+                    <span class="font-medium">#{{ invoice.pk }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Service" %}</span>
+                    <span>{{ invoice.booking.service_category.name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Amount Paid" %}</span>
+                    <span class="font-bold text-green-600">₹{{ invoice.amount|floatformat:0 }}</span>
+                </div>
+                {% if invoice.razorpay_payment_id %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">{% trans "Payment ID" %}</span>
+                    <span class="font-mono text-xs">{{ invoice.razorpay_payment_id }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="flex flex-col gap-3">
+            <a href="{% url 'bookings:list' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium">
+                📋 {% trans "View Bookings" %}
+            </a>
+            <a href="{% url 'payments:list' %}" class="bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-lg font-medium">
+                💰 {% trans "Payment History" %}
+            </a>
+            {% if invoice %}
+            <a href="{% url 'ratings:submit' booking_id=invoice.booking.pk %}" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-6 py-3 rounded-lg font-medium">
+                ⭐ {% trans "Rate Your Experience" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

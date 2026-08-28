@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: gig-saarthi
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn gigsaarthi.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: gigsaarthi.settings.prod
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*"

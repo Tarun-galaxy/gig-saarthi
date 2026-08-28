@@ -1,0 +1,710 @@
+{% load static %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}" class="h-full antialiased font-sans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Gig Saarthi — Modern Cooperative Gig Services Platform">
+    <meta name="theme-color" content="#4f46e5">
+    <title>{% block title %}Gig Saarthi — Cooperative Gig Platform{% endblock %}</title>
+
+    <!-- Instant Theme Detection Script (Prevents flash of white) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind CSS via CDN with Dark Mode Class -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                            950: '#1e1b4b',
+                        },
+                        accent: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        surface: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    },
+                    boxShadow: {
+                        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04)',
+                        'floating': '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX for dynamic updates -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Chart.js for admin dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet.js + OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{% static 'js/gigmap.js' %}"></script>
+
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+        ::selection { background-color: #c7d2fe; color: #312e81; }
+
+        /* Global Seamless Dark Mode Overrides */
+        .dark body { background-color: #020617 !important; color: #f8fafc !important; }
+        .dark .bg-white { background-color: #0f172a !important; color: #f8fafc !important; border-color: rgba(51, 65, 85, 0.6) !important; }
+        .dark .bg-surface-50 { background-color: #090e1a !important; color: #f1f5f9 !important; border-color: rgba(51, 65, 85, 0.5) !important; }
+        .dark .bg-surface-100 { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: rgba(51, 65, 85, 0.6) !important; }
+        .dark .text-slate-900 { color: #f8fafc !important; }
+        .dark .text-slate-800 { color: #f1f5f9 !important; }
+        .dark .text-slate-700 { color: #cbd5e1 !important; }
+        .dark .text-slate-600 { color: #94a3b8 !important; }
+        .dark .text-slate-500 { color: #64748b !important; }
+        .dark .border-slate-200, .dark .border-slate-200\/80 { border-color: rgba(51, 65, 85, 0.6) !important; }
+        .dark .border-slate-100 { border-color: rgba(51, 65, 85, 0.4) !important; }
+        .dark header { background-color: rgba(15, 23, 42, 0.85) !important; border-color: rgba(51, 65, 85, 0.6) !important; }
+        .dark footer { background-color: #0f172a !important; border-color: rgba(51, 65, 85, 0.6) !important; color: #64748b !important; }
+        .dark nav#mobile-bottom-nav { background-color: rgba(15, 23, 42, 0.9) !important; border-color: rgba(51, 65, 85, 0.6) !important; }
+        .dark input, .dark select, .dark textarea { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+        .dark input::placeholder, .dark textarea::placeholder { color: #64748b !important; }
+        .dark .shadow-subtle { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4) !important; }
+        .dark .shadow-card { box-shadow: 0 4px 10px -1px rgba(0, 0, 0, 0.5) !important; }
+        .dark .shadow-floating { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important; }
+
+        /* Modern Scrollbar & Overflow Styling */
+        .scrollbar-none::-webkit-scrollbar,
+        .no-scrollbar::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        .scrollbar-none,
+        .no-scrollbar {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+
+        /* Sleek custom scrollbars for any actual scroll container */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.7);
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.6);
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 0.9);
+        }
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="h-full bg-surface-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col selection:bg-indigo-100 transition-colors duration-200">
+
+    <!-- Modern Minimalist Sticky Navbar -->
+    <header class="sticky top-0 z-[1200] bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-all shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Brand / Logo -->
+                <a href="{% url 'core:home' %}" class="flex items-center space-x-3 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+                        <i data-lucide="handshake" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-lg text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary-600 transition-colors">Gig Saarthi</span>
+                        <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none mt-0.5">Cooperative Gig</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Links (Text Routes) -->
+                <div class="hidden md:flex items-center space-x-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'core:dashboard' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+                            <span>{% trans "Dashboard" %}</span>
+                        </a>
+
+                        {% if user.is_worker %}
+                            <a href="{% url 'workers:dashboard' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
+                                <i data-lucide="navigation" class="w-4 h-4 text-slate-400"></i>
+                                <span>{% trans "Active Dispatch" %}</span>
+                            </a>
+                            <a href="{% url 'bookings:list' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
+                                <i data-lucide="calendar-check" class="w-4 h-4 text-slate-400"></i>
+                                <span>{% trans "Booking History" %}</span>
+                            </a>
+                        {% endif %}
+
+                        {% if user.is_customer %}
+                            <a href="{% url 'bookings:list' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
+                                <i data-lucide="calendar-check" class="w-4 h-4 text-slate-400"></i>
+                                <span>{% trans "My Bookings" %}</span>
+                            </a>
+                            <a href="{% url 'bookings:create' %}" class="inline-flex items-center space-x-1.5 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm hover:shadow transition-all">
+                                <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+                                <span>{% trans "Book Service" %}</span>
+                            </a>
+                        {% endif %}
+
+                        {% if user.is_coop_admin or user.is_platform_admin %}
+                            <a href="{% url 'cooperative_admin:dashboard' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/60 hover:bg-indigo-100/80 border border-indigo-100 dark:border-indigo-800 transition-colors inline-flex items-center space-x-1.5">
+                                <i data-lucide="shield" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                                <span>{% trans "Admin Console" %}</span>
+                            </a>
+                            <a href="{% url 'workers:list' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
+                                <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                                <span>{% trans "Workers Directory" %}</span>
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <!-- Right Side Actions: Theme, Language, Notifications, Avatar Menu (Visible on Mobile & Desktop) -->
+                <div class="flex items-center space-x-1 sm:space-x-2">
+                    
+                    <!-- Theme Toggle Button (Light / Dark Mode) -->
+                    <button onclick="toggleTheme()" type="button" id="theme-toggle-btn"
+                        class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 dark:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
+                        title="Toggle Light / Dark Mode" aria-label="Toggle theme">
+                        <span class="dark:hidden flex items-center justify-center">
+                            <i data-lucide="moon" class="w-4 h-4 text-slate-600"></i>
+                        </span>
+                        <span class="hidden dark:flex items-center justify-center">
+                            <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+                        </span>
+                    </button>
+
+                    <!-- Language Switcher Dropdown -->
+                    <div class="relative" x-data="{ showLang: false }">
+                        <button @click="showLang = !showLang" class="inline-flex items-center space-x-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
+                            <i data-lucide="globe" class="w-3.5 h-3.5 text-slate-500"></i>
+                            <span>{{ request.LANGUAGE_CODE|default:'EN'|upper }}</span>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                        </button>
+                        <div x-show="showLang" @click.away="showLang = false" x-cloak
+                            class="absolute right-0 mt-2 w-44 bg-white dark:bg-slate-900 rounded-xl shadow-floating border border-slate-100 dark:border-slate-800 py-1.5 z-50 transition-all">
+                            <div class="px-3 py-1 text-[11px] font-bold uppercase text-slate-400">{% trans "Choose Language" %}</div>
+                            <form method="post" action="{% url 'core:set_language' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="language" value="en">
+                                <button type="submit" class="w-full text-left px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-primary-950/60 hover:text-primary-700 flex items-center justify-between">
+                                    <span>English</span>
+                                    {% if request.LANGUAGE_CODE == 'en' %}<span class="text-primary-600">✓</span>{% endif %}
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'core:set_language' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="language" value="hi">
+                                <button type="submit" class="w-full text-left px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-primary-950/60 hover:text-primary-700 flex items-center justify-between">
+                                    <span>हिन्दी (Hindi)</span>
+                                    {% if request.LANGUAGE_CODE == 'hi' %}<span class="text-primary-600">✓</span>{% endif %}
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'core:set_language' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="language" value="bn">
+                                <button type="submit" class="w-full text-left px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-primary-950/60 hover:text-primary-700 flex items-center justify-between">
+                                    <span>বাংলা (Bengali)</span>
+                                    {% if request.LANGUAGE_CODE == 'bn' %}<span class="text-primary-600">✓</span>{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <!-- Notifications Bell -->
+                        <div x-data="{ count: 0 }" x-init="
+                            fetch('/api/notifications/unread-count/')
+                                .then(r => r.json())
+                                .then(d => count = d.unread_count)
+                                .catch(() => {})
+                        " class="relative">
+                            <a href="{% url 'notifications:list' %}" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative" title="Notifications">
+                                <i data-lucide="bell" class="w-4 h-4"></i>
+                                <span x-show="count > 0" x-text="count"
+                                    class="absolute top-1 right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white dark:ring-slate-900"></span>
+                            </a>
+                        </div>
+
+                        <!-- User Profile Avatar Menu with Dropdown (Visible on Mobile & Desktop) -->
+                        <div class="relative" x-data="{ showUserMenu: false }">
+                            <button @click="showUserMenu = !showUserMenu" class="flex items-center space-x-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="User menu">
+                                <div class="w-9 h-9 rounded-full bg-indigo-600/20 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 flex items-center justify-center text-sm font-extrabold shadow-xs">
+                                    {{ user.first_name|first|default:user.username|first|upper }}
+                                </div>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                            </button>
+                            
+                            <!-- Floating Dropdown Card (Matches Screenshot) -->
+                            <div x-show="showUserMenu" @click.away="showUserMenu = false" x-cloak
+                                class="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 rounded-2xl shadow-floating border border-slate-200/80 dark:border-slate-800 py-2 z-50">
+                                <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                                    <p class="text-sm font-black text-slate-900 dark:text-white truncate">{{ user.get_full_name|default:user.username }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5">{{ user.get_role_display }}</p>
+                                </div>
+                                <a href="{% url 'accounts:profile' %}" class="flex items-center space-x-2.5 px-4 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary-600 transition-colors">
+                                    <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                                    <span>{% trans "My Profile" %}</span>
+                                </a>
+                                <form method="post" action="{% url 'accounts:logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full text-left flex items-center space-x-2.5 px-4 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+                                        <i data-lucide="log-out" class="w-4 h-4 text-rose-500"></i>
+                                        <span>{% trans "Sign Out" %}</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <!-- Guest State (Hidden on landing page hero where CTA buttons already exist) -->
+                        {% if request.path != '/' and request.resolver_match.url_name != 'home' %}
+                        <a href="{% url 'accounts:login' %}" class="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 transition-colors">
+                            {% trans "Log In" %}
+                        </a>
+                        <a href="{% url 'accounts:register' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm hover:shadow transition-all">
+                            {% trans "Get Started" %}
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Elevated Floating Flash Messages -->
+    {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 w-full mt-4 space-y-2 z-40">
+        {% for message in messages %}
+        <div class="rounded-xl p-3.5 shadow-subtle border flex items-center justify-between transition-all {% if message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200{% elif message.tags == 'error' %}bg-rose-50 dark:bg-rose-950/70 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200{% elif message.tags == 'warning' %}bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200{% else %}bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200{% endif %}"
+             x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 6000)">
+            <div class="flex items-center space-x-2.5">
+                <span class="text-base">
+                    {% if message.tags == 'success' %}
+                        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+                    {% elif message.tags == 'error' %}
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 dark:text-rose-400"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 dark:text-amber-400"></i>
+                    {% else %}
+                        <i data-lucide="info" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                    {% endif %}
+                </span>
+                <p class="text-sm font-medium">{{ message }}</p>
+            </div>
+            <button @click="show = false" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 text-base">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content Shell -->
+    <main class="flex-1 w-full pb-20 md:pb-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Minimalist Footer -->
+    <footer class="hidden md:block bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 py-8 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-800 dark:text-slate-200">Gig Saarthi</span>
+                <span>•</span>
+                <span>Ministry of Cooperation — NCCT</span>
+            </div>
+            <p>© 2026 Gig Saarthi Cooperative Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Modern Minimalist Mobile Bottom Navigation -->
+    {% if user.is_authenticated %}
+    <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 z-[1200] bottom-nav shadow-card transition-colors">
+        <div class="flex justify-around items-center h-16 px-2">
+            <a href="{% url 'core:dashboard' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Home" %}</span>
+            </a>
+            {% if user.is_customer %}
+            <a href="{% url 'bookings:list' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="calendar" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Bookings" %}</span>
+            </a>
+            {% endif %}
+            {% if user.is_worker %}
+            <a href="{% url 'bookings:list' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="calendar-check" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Jobs" %}</span>
+            </a>
+            {% endif %}
+            {% if user.is_coop_admin or user.is_platform_admin %}
+            <a href="{% url 'cooperative_admin:dashboard' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="shield" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Admin" %}</span>
+            </a>
+            {% endif %}
+            {% if user.is_worker %}
+            <!-- AI Sahayak Tab for Workers (Direct Window Trigger) -->
+            <button type="button" onclick="if(window.openSaarthiAIChat){window.openSaarthiAIChat();}else{window.dispatchEvent(new CustomEvent('toggle-ai-chat'));}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors cursor-pointer">
+                <div class="relative">
+                    <i data-lucide="bot" class="w-5 h-5 mb-0.5 animate-pulse text-primary-600 dark:text-primary-400"></i>
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
+                </div>
+                <span class="text-[10px] font-extrabold text-primary-600 dark:text-primary-400">{% trans "AI Sahayak" %}</span>
+            </button>
+            {% endif %}
+            <a href="{% url 'notifications:list' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="bell" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Alerts" %}</span>
+            </a>
+            <a href="{% url 'accounts:profile' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <i data-lucide="user" class="w-5 h-5 mb-0.5"></i>
+                <span>{% trans "Profile" %}</span>
+            </a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    <!-- 🤖 SAARTHI SAHAYAK — WORKER AI ASSISTANT CHAT DRAWER & FLOATING HUD   -->
+    <!-- ═════════════════════════════════════════════════════════════════════ -->
+    {% if user.is_authenticated and user.is_worker %}
+    <div x-data="saarthiAIChat()" @toggle-ai-chat.window="openChat()" class="relative z-[3000]">
+        <!-- Backdrop Overlay on Mobile -->
+        <div x-show="isOpen" x-cloak @click="isOpen = false"
+            class="sm:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[2999]"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0">
+        </div>
+
+        <!-- Floating Trigger Button (Desktop & Tablet) -->
+        <div class="hidden sm:block fixed bottom-6 right-6 z-[2500]" x-show="!isOpen" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <button type="button" @click="openChat()"
+                class="group flex items-center space-x-2.5 bg-gradient-to-r from-primary-600 via-indigo-600 to-primary-700 text-white px-4 py-3 rounded-2xl shadow-floating hover:shadow-2xl hover:scale-105 active:scale-95 transition-all border border-white/20">
+                <span class="text-xl group-hover:rotate-12 transition-transform">🤖</span>
+                <div class="text-left">
+                    <p class="text-xs font-black tracking-wide uppercase leading-none">{% trans "Saarthi Sahayak" %}</p>
+                    <p class="text-[10px] text-primary-200 font-semibold leading-none mt-1">{% trans "AI Support & Complaints" %}</p>
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping ml-1"></span>
+            </button>
+        </div>
+
+        <!-- AI Chat Drawer Modal Container -->
+        <div x-show="isOpen" x-cloak
+            class="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[420px] sm:h-[620px] z-[3000] flex flex-col bg-white dark:bg-slate-900 sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden"
+            x-transition:enter="transition ease-out duration-300 transform"
+            x-transition:enter-start="opacity-0 translate-y-8 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-200 transform"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-8 sm:scale-95">
+
+            <!-- Chat Header -->
+            <div class="px-5 py-4 bg-gradient-to-r from-primary-600 via-indigo-600 to-primary-700 text-white flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-xl border border-white/20">
+                        🤖
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <h3 class="font-extrabold text-sm tracking-tight text-white leading-none">{% trans "Saarthi Sahayak" %}</h3>
+                            <span class="px-1.5 py-0.5 bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[9px] font-bold rounded-md">Groq AI</span>
+                        </div>
+                        <p class="text-[11px] text-primary-100 font-medium leading-none mt-1">{% trans "24/7 Worker Grievance & Policy Help" %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <button type="button" @click="clearChat()" title="Clear Chat"
+                        class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition">
+                        🔄
+                    </button>
+                    <button type="button" @click="isOpen = false" title="Close"
+                        class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Suggestion Action Chips -->
+            <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200/60 dark:border-slate-800/80 flex items-center space-x-2 overflow-x-auto no-scrollbar text-xs">
+                <button type="button" @click="sendQuickPrompt('When will my weekly payout be credited to my bank account?')"
+                    class="flex-shrink-0 px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 text-slate-700 dark:text-slate-300 hover:text-primary-600 rounded-full border border-slate-200 dark:border-slate-700 text-[11px] font-semibold transition active:scale-95">
+                    💰 Payouts & 5% Fee
+                </button>
+                <button type="button" @click="sendQuickPrompt('Explain my ₹5,00,000 Safety Insurance policy and how to submit a claim.')"
+                    class="flex-shrink-0 px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 text-slate-700 dark:text-slate-300 hover:text-primary-600 rounded-full border border-slate-200 dark:border-slate-700 text-[11px] font-semibold transition active:scale-95">
+                    🛡️ ₹5L Insurance Claim
+                </button>
+                <button type="button" @click="sendQuickPrompt('A customer refused to pay or behaved inappropriately. How do I file a complaint?')"
+                    class="flex-shrink-0 px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-950/60 text-slate-700 dark:text-slate-300 hover:text-primary-600 rounded-full border border-slate-200 dark:border-slate-700 text-[11px] font-semibold transition active:scale-95">
+                    📝 Customer Dispute / Complaint
+                </button>
+                <button type="button" @click="sendQuickPrompt('Emergency Roadside Accident SOS assistance needed.')"
+                    class="flex-shrink-0 px-2.5 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-rose-100 rounded-full border border-rose-200 dark:border-rose-800 text-[11px] font-semibold transition active:scale-95">
+                    🚨 Emergency SOS
+                </button>
+            </div>
+
+            <!-- Messages Stream Container -->
+            <div id="ai-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-100/50 dark:bg-slate-900/60 text-xs">
+                <template x-for="(msg, index) in messages" :key="index">
+                    <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                        <div class="max-w-[85%] rounded-2xl p-3.5 shadow-sm text-xs leading-relaxed"
+                            :class="msg.role === 'user' 
+                                ? 'bg-primary-600 text-white rounded-br-none' 
+                                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700 rounded-bl-none'">
+                            <div class="flex items-center space-x-1.5 mb-1 opacity-75 text-[10px] font-bold">
+                                <span x-text="msg.role === 'user' ? '👤 You' : '🤖 Saarthi Sahayak'"></span>
+                                <template x-if="msg.engine">
+                                    <span class="text-[9px] px-1.5 py-0.2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-normal" x-text="msg.engine"></span>
+                                </template>
+                            </div>
+                            <div class="whitespace-pre-wrap" x-html="formatMarkdown(msg.content)"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Loading Typing Indicator -->
+                <div x-show="isLoading" class="flex justify-start">
+                    <div class="bg-white dark:bg-slate-800 text-slate-500 rounded-2xl rounded-bl-none p-3.5 border border-slate-200 dark:border-slate-700 flex items-center space-x-2">
+                        <span class="text-sm">🤖</span>
+                        <div class="flex space-x-1">
+                            <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></span>
+                            <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                            <span class="w-2 h-2 bg-primary-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                        </div>
+                        <span class="text-[11px] text-slate-400 font-medium">Saarthi AI is typing...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Footer -->
+            <form @submit.prevent="sendMessage()" class="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center space-x-2">
+                <input type="text" x-model="userInput" placeholder="Ask a question (English, Hindi, or Bengali)..."
+                    :disabled="isLoading"
+                    class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-primary-500 focus:outline-none placeholder-slate-400">
+                <button type="submit" :disabled="isLoading || !userInput.trim()"
+                    class="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs shadow-sm hover:shadow transition flex items-center space-x-1 active:scale-95">
+                    <span>Send</span>
+                    <span>➤</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function saarthiAIChat() {
+        return {
+            isOpen: false,
+            isLoading: false,
+            userInput: '',
+            messages: [
+                {
+                    role: 'assistant',
+                    content: "Hello {{ user.first_name|default:user.username }}! 👋\n\nI am **Saarthi Sahayak**, your 24/7 AI companion on Gig Saarthi.\n\nI can help you with:\n• 💰 **Weekly Payouts & 5% Cooperative Fee Breakdown**\n• 🛡️ **₹5,00,000 Safety Insurance Claims**\n• 📝 **Customer Dispute & Grievance Reporting**\n• 🚨 **Emergency Roadside SOS Assistance**\n\nHow can I assist you today? Feel free to type in English, or ask in Hindi/Bengali if preferred!"
+                }
+            ],
+            init() {
+                window.openSaarthiAIChat = () => {
+                    this.openChat();
+                };
+            },
+            openChat() {
+                this.isOpen = true;
+                this.$nextTick(() => {
+                    this.scrollToBottom();
+                    if (window.lucide) lucide.createIcons();
+                });
+            },
+            clearChat() {
+                this.messages = [
+                    {
+                        role: 'assistant',
+                        content: "Chat cleared! How can I assist you now, {{ user.first_name|default:user.username }} Ji? 🙏"
+                    }
+                ];
+            },
+            sendQuickPrompt(text) {
+                this.userInput = text;
+                this.sendMessage();
+            },
+            sendMessage() {
+                const text = this.userInput.trim();
+                if (!text || this.isLoading) return;
+
+                this.messages.push({ role: 'user', content: text });
+                this.userInput = '';
+                this.isLoading = true;
+                this.$nextTick(() => this.scrollToBottom());
+
+                // Get CSRF token
+                let csrf = '{{ csrf_token }}';
+                if (!csrf || csrf === '') {
+                    const match = document.cookie.match(/csrftoken=([^;]+)/);
+                    if (match) csrf = match[1];
+                }
+
+                // Call Django Groq AI backend API
+                fetch('/workers/api/ai-chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        history: this.messages.slice(-8)
+                    })
+                })
+                .then(async response => {
+                    this.isLoading = false;
+                    const textData = await response.text();
+                    try {
+                        const data = JSON.parse(textData);
+                        if (data && data.reply) {
+                            this.messages.push({
+                                role: 'assistant',
+                                content: data.reply,
+                                engine: data.engine || 'Groq AI'
+                            });
+                        } else {
+                            this.messages.push({
+                                role: 'assistant',
+                                content: data.error || "Maaf kijiye, could not process request right now. Please try again."
+                            });
+                        }
+                    } catch (e) {
+                        this.messages.push({
+                            role: 'assistant',
+                            content: "Server response error. Please try again."
+                        });
+                    }
+                    this.$nextTick(() => this.scrollToBottom());
+                })
+                .catch(err => {
+                    this.isLoading = false;
+                    this.messages.push({
+                        role: 'assistant',
+                        content: "Network issue connecting to Saarthi AI. Please check your connection."
+                    });
+                    this.$nextTick(() => this.scrollToBottom());
+                });
+            },
+            scrollToBottom() {
+                const el = document.getElementById('ai-chat-messages');
+                if (el) {
+                    el.scrollTop = el.scrollHeight;
+                }
+            },
+            formatMarkdown(txt) {
+                if (!txt) return '';
+                // Simple safe formatting for bold, bullets and linebreaks
+                let formatted = txt
+                    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^• (.*$)/gim, '<div class="flex items-start space-x-1.5"><span class="text-primary-500">•</span><span>$1</span></div>');
+                return formatted;
+            }
+        }
+    }
+    </script>
+    {% endif %}
+
+    <!-- Global Theme Switcher & Lucide Init Helper -->
+    <script>
+        function toggleTheme() {
+            var isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+        document.body.addEventListener('htmx:afterSwap', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+

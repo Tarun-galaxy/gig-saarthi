@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Find Workers" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">🔍 {% trans "Verified Saarthis Directory" %}</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">{% trans "Browse trusted cooperative Saarthis backed by verified skill assessments and platform insurance" %}</p>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-4 sm:p-5 mb-8">
+        <form method="get" class="flex flex-wrap items-center gap-3">
+            <div class="flex-1 min-w-[200px]">
+                <select name="category" class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-primary-500">
+                    <option value="">{% trans "All Trade Categories" %}</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
+                        {{ cat.icon }} {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="w-48">
+                <select name="availability" class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-primary-500">
+                    <option value="">{% trans "All Availability" %}</option>
+                    <option value="available">{% trans "Available Online" %}</option>
+                    <option value="busy">{% trans "Busy on Site" %}</option>
+                </select>
+            </div>
+
+            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                {% trans "Apply Filters" %}
+            </button>
+        </form>
+    </div>
+
+    <!-- Worker Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for worker in workers %}
+        <div class="bg-white rounded-2xl border border-slate-200/80 hover:border-primary-300 shadow-subtle hover:shadow-card transition-all p-6 flex flex-col justify-between group">
+            <div>
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100 flex items-center justify-center font-extrabold text-base shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                            {{ worker.user.first_name|first|default:"W" }}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-1.5">
+                                <h3 class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors">
+                                    {{ worker.user.get_full_name|default:worker.user.username }}
+                                </h3>
+                                {% if worker.is_verified %}
+                                <span class="text-emerald-600 text-xs" title="{% trans 'Verified Worker' %}">✅</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ worker.experience_years }} {% trans "years experience" %}</p>
+                        </div>
+                    </div>
+
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border
+                        {% if worker.availability_status == 'available' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                        {% elif worker.availability_status == 'busy' %}bg-amber-50 text-amber-700 border-amber-200
+                        {% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
+                        {% if worker.availability_status == 'available' %}● {% trans "Online" %}
+                        {% elif worker.availability_status == 'busy' %}⏳ {% trans "Busy" %}
+                        {% else %}{% trans "Offline" %}{% endif %}
+                    </span>
+                </div>
+
+                <!-- Skills -->
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                    {% for skill in worker.skills.all|slice:":3" %}
+                    <span class="px-2 py-0.5 bg-surface-100 text-slate-700 rounded-md text-[11px] font-medium border border-slate-200/60">{{ skill.name }}</span>
+                    {% endfor %}
+                    {% if worker.skills.count > 3 %}
+                    <span class="px-2 py-0.5 bg-surface-100 text-slate-500 rounded-md text-[11px] font-medium border border-slate-200/60">+{{ worker.skills.count|add:"-3" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <!-- Rating & Jobs -->
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-600 py-3 border-t border-slate-100 mb-3">
+                    <span class="text-amber-500 font-bold flex items-center space-x-1">
+                        <span>⭐</span>
+                        <span class="text-slate-800">{{ worker.avg_rating|floatformat:1 }}</span>
+                    </span>
+                    <span class="text-slate-500">{{ worker.total_jobs_completed }} {% trans "jobs completed" %}</span>
+                </div>
+
+                <a href="{% url 'workers:detail' pk=worker.pk %}"
+                    class="block w-full text-center bg-surface-50 hover:bg-primary-600 hover:text-white text-slate-800 border border-slate-200 hover:border-primary-600 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98]">
+                    {% trans "View Full Profile" %} →
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-8">
+            <p class="text-4xl mb-3">🔍</p>
+            <h3 class="text-sm font-bold text-slate-800 mb-1">{% trans "No Saarthis found" %}</h3>
+            <p class="text-xs text-slate-500">{% trans "No Saarthis currently match your selected filters. Try broadening your criteria." %}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+

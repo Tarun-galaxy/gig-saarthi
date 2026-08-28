@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Dashboard" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Welcome -->
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+            {% trans "Welcome" %}, {{ user.first_name|default:user.username }}! 👋
+        </h1>
+        <p class="text-gray-600 mt-1">
+            {% if user.is_worker %}
+                {% trans "Manage your jobs and profile" %}
+            {% elif user.is_customer %}
+                {% trans "Find trusted workers for your needs" %}
+            {% elif user.is_coop_admin %}
+                {% trans "Cooperative administration dashboard" %}
+            {% else %}
+                {% trans "Platform administration" %}
+            {% endif %}
+        </p>
+    </div>
+
+    {% if user.is_worker %}
+        <!-- Worker Dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow p-6">
+                <p class="text-sm text-gray-500">{% trans "Available Jobs" %}</p>
+                <p class="text-3xl font-bold text-primary-600">—</p>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <p class="text-sm text-gray-500">{% trans "Completed" %}</p>
+                <p class="text-3xl font-bold text-accent-600">—</p>
+            </div>
+            <div class="bg-white rounded-xl shadow p-6">
+                <p class="text-sm text-gray-500">{% trans "My Rating" %}</p>
+                <p class="text-3xl font-bold text-yellow-500">— ★</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">{% trans "Quick Actions" %}</h2>
+            <div class="flex flex-wrap gap-3">
+                <a href="{% url 'bookings:list' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium">
+                    {% trans "View My Jobs" %}
+                </a>
+                <a href="{% url 'workers:my_profile' %}" class="bg-gray-100 hover:bg-gray-200 px-6 py-3 rounded-lg font-medium">
+                    {% trans "Edit Profile" %}
+                </a>
+            </div>
+        </div>
+
+    {% elif user.is_customer %}
+        <!-- Customer Dashboard -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <a href="{% url 'bookings:create' %}" class="bg-primary-600 hover:bg-primary-700 text-white rounded-xl p-6 text-center transition">
+                <div class="text-3xl mb-2">➕</div>
+                <p class="font-semibold">{% trans "New Booking" %}</p>
+            </a>
+            <a href="{% url 'bookings:list' %}" class="bg-white rounded-xl shadow p-6 text-center hover:shadow-md transition">
+                <div class="text-3xl mb-2">📋</div>
+                <p class="font-semibold">{% trans "My Bookings" %}</p>
+            </a>
+            <a href="{% url 'bookings:create' %}" class="bg-white rounded-xl shadow p-6 text-center hover:shadow-md transition">
+                <div class="text-3xl mb-2">✨</div>
+                <p class="font-semibold">{% trans "Explore Services" %}</p>
+            </a>
+            <a href="{% url 'payments:list' %}" class="bg-white rounded-xl shadow p-6 text-center hover:shadow-md transition">
+                <div class="text-3xl mb-2">💰</div>
+                <p class="font-semibold">{% trans "Payments" %}</p>
+            </a>
+        </div>
+
+    {% elif user.is_coop_admin %}
+        <!-- Admin Dashboard -->
+        <div class="text-center py-12">
+            <p class="text-gray-600 mb-4">{% trans "Use the full cooperative admin dashboard" %}</p>
+            <a href="{% url 'cooperative_admin:dashboard' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold">
+                {% trans "Open Admin Dashboard" %}
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+# Gig Saarthi — Python Dependencies
+
+# Core Django
+Django>=5.0,<6.0
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.3
+django-cors-headers>=4.3
+django-filter>=23.5
+
+# Database & Production Server
+psycopg2-binary>=2.9  # PostgreSQL (production)
+dj-database-url>=2.1
+gunicorn>=21.2
+
+# Forms & UI
+django-crispy-forms>=2.1
+crispy-tailwind>=0.5
+
+# Configuration
+python-decouple>=3.8
+
+# File uploads
+Pillow>=10.0
+
+# Celery (async tasks)
+celery>=5.3
+redis>=5.0
+
+# Payments
+razorpay>=1.4
+
+# Static files
+whitenoise>=6.5
+
+# Text processing (for i18n)
+# babel — included with Django

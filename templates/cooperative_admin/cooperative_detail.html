@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ cooperative.name }} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <a href="{% url 'cooperative_admin:cooperative_list' %}" class="text-primary-600 hover:text-primary-700 text-sm mb-4 inline-block">← {% trans "Back to Cooperatives" %}</a>
+
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <h1 class="text-2xl font-bold mb-2">{{ cooperative.name }}</h1>
+        <p class="text-gray-500">{{ cooperative.region }} — {{ cooperative.get_federation_level_display }}</p>
+        <p class="text-sm text-gray-400 mt-1">{% trans "Contact" %}: {{ cooperative.contact_person|default:"—" }} | {{ cooperative.contact_phone|default:"—" }}</p>
+    </div>
+
+    <h2 class="text-lg font-semibold mb-4">{% trans "Workers" %} ({{ workers|length }})</h2>
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Name" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Status" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Rating" %}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{% trans "Jobs" %}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for worker in workers %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium">{{ worker.user.get_full_name|default:worker.user.username }}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-0.5 rounded-full text-xs
+                            {% if worker.is_verified %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {% if worker.is_verified %}{% trans "Verified" %}{% else %}{% trans "Pending" %}{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">⭐ {{ worker.avg_rating|floatformat:1 }}</td>
+                    <td class="px-4 py-3">{{ worker.total_jobs_completed }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-4 py-8 text-center text-gray-500">{% trans "No workers in this cooperative" %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

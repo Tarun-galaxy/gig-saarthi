@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "Book a Service" %} — Gig Saarthi{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  .flatpickr-calendar {
+    font-family: inherit !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 10px !important;
+    z-index: 9999 !important;
+  }
+  .dark .flatpickr-calendar {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+  }
+  .dark .flatpickr-months, .dark .flatpickr-month, .dark .flatpickr-current-month {
+    color: #f8fafc !important;
+    fill: #f8fafc !important;
+  }
+  .dark .flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+  }
+  .dark .flatpickr-weekdays {
+    background: transparent !important;
+  }
+  .dark span.flatpickr-weekday {
+    color: #94a3b8 !important;
+  }
+  .dark .flatpickr-day {
+    color: #f8fafc !important;
+  }
+  .dark .flatpickr-day.prevMonthDay, .dark .flatpickr-day.nextMonthDay {
+    color: #475569 !important;
+  }
+  .dark .flatpickr-day.flatpickr-disabled {
+    color: #334155 !important;
+  }
+  .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+  .flatpickr-day:hover:not(.selected) {
+    background: #eef2ff !important;
+  }
+  .dark .flatpickr-day:hover:not(.selected) {
+    background: #1e293b !important;
+  }
+  .flatpickr-day.today {
+    border-color: #4f46e5 !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+
+    <!-- Header & Progress Stepper -->
+    <div class="mb-8 text-center sm:text-left">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            {% trans "Book a Verified Saarthi" %}
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {% trans "Select your required service category, specify your schedule, and our geo-matching engine will assign the best nearby Saarthi." %}
+        </p>
+    </div>
+
+    <form method="post" id="booking-form" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Step 1: Service Category Selection Grid -->
+        <div id="step-select" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-7 transition-all">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 dark:text-white">{% trans "1. Choose Service Category" %}</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{% trans "Tap to select the service you need" %}</p>
+                </div>
+                <span class="text-xs font-bold text-slate-400 dark:text-slate-500">Step 1 of 2</span>
+            </div>
+
+            <input type="hidden" name="service_category" id="selected_category" required>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                {% for cat in categories %}
+                <button type="button" class="service-card group relative flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/60 hover:border-primary-500 dark:hover:border-primary-400 hover:bg-primary-50/40 dark:hover:bg-slate-800/80 transition-all cursor-pointer text-center"
+                    data-id="{{ cat.pk }}" data-name="{{ cat.name }}" data-price="{{ cat.base_price }}" data-icon="{{ cat.icon }}">
+                    <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 flex items-center justify-center text-2xl mb-2.5 group-hover:scale-110 transition-transform">
+                        <span>{{ cat.icon }}</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-900 dark:text-white leading-snug">{{ cat.name }}</span>
+                    {% if cat.base_price %}
+                    <span class="text-[11px] font-black text-primary-600 dark:text-primary-300 mt-2 bg-primary-50 dark:bg-primary-950/80 px-2.5 py-0.5 rounded-full border border-primary-100 dark:border-primary-800">
+                        ₹{{ cat.base_price|floatformat:0 }}
+                    </span>
+                    {% endif %}
+                    <!-- Active check badge -->
+                    <div class="check-badge absolute top-2 right-2 w-5 h-5 bg-primary-600 text-white rounded-full items-center justify-center text-[10px] font-bold hidden shadow-xs">
+                        ✓
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+
+            <p id="no-category-error" class="text-rose-600 dark:text-rose-400 text-xs font-semibold mt-3 hidden flex items-center space-x-1">
+                <span>⚠️</span>
+                <span>{% trans "Please select a service category to continue" %}</span>
+            </p>
+        </div>
+
+        <!-- Step 2: Service Location & Schedule Details -->
+        <div id="step-details" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-7 hidden transition-all">
+            <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Step 2:</span>
+                    <h2 class="text-base font-extrabold text-slate-900 dark:text-white" id="selected-label"></h2>
+                </div>
+                <button type="button" id="change-category" class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 bg-primary-50 dark:bg-primary-950/80 hover:bg-primary-100/80 px-2.5 py-1 rounded-lg border border-primary-100 dark:border-primary-800 transition">
+                    {% trans "Change" %} ↻
+                </button>
+            </div>
+
+            <!-- Description Input -->
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    {% trans "Description & Requirements" %}
+                </label>
+                <textarea name="description" rows="3" required
+                    class="w-full px-4 py-3 bg-surface-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-900 text-sm text-slate-900 dark:text-white transition placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    placeholder="{% trans 'Describe the issue or service needed (e.g. leaking sink tap under kitchen cabinet)...' %}">{{ initial_desc }}</textarea>
+            </div>
+
+            <!-- Emergency ASAP Toggle Box (moved above date/time) -->
+            <div class="mb-5 p-3.5 bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xl">🚨</span>
+                    <div>
+                        <p class="text-xs font-bold text-rose-900 dark:text-rose-200">{% trans "Emergency Booking (ASAP)" %}</p>
+                        <p class="text-[11px] text-rose-700 dark:text-rose-400">{% trans "Dispatches to nearest available worker within 15km instantly" %}</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_emergency" id="emergency-toggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
+                </label>
+            </div>
+
+            <!-- Date/Time Selection Container (hidden when emergency is ON) -->
+            <div id="datetime-container">
+                <!-- Quick-Tap Date Selection -->
+                <div class="mb-5" id="date-section">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5">{% trans "When do you need it?" %}</label>
+                    <input type="hidden" name="date" id="date-hidden" required>
+                    
+                    <div class="flex flex-wrap gap-2.5" id="date-chips">
+                        <button type="button" class="date-chip px-4 py-2.5 rounded-xl text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-offset="0">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="date-chip-label-0">—</span>
+                                <span class="text-sm font-extrabold text-slate-900 dark:text-white">{% trans "Today" %}</span>
+                            </div>
+                        </button>
+                        <button type="button" class="date-chip px-4 py-2.5 rounded-xl text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-offset="1">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="date-chip-label-1">—</span>
+                                <span class="text-sm font-extrabold text-slate-900 dark:text-white">{% trans "Tomorrow" %}</span>
+                            </div>
+                        </button>
+                        <button type="button" class="date-chip px-4 py-2.5 rounded-xl text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-offset="2">
+                            <div class="flex flex-col items-center">
+                                <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="date-chip-label-2">—</span>
+                                <span class="text-sm font-extrabold text-slate-900 dark:text-white" id="date-chip-name-2">—</span>
+                            </div>
+                        </button>
+                        <!-- Custom date: Flatpickr calendar popup button -->
+                        <button type="button" id="custom-date-btn" class="date-chip px-4 py-2.5 rounded-xl text-sm font-bold border transition-all cursor-pointer
+                            bg-white dark:bg-slate-950/60 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400">
+                            <div class="flex flex-col items-center pointer-events-none">
+                                <i data-lucide="calendar-plus" class="w-4 h-4 mb-0.5"></i>
+                                <span class="text-xs font-bold" id="custom-date-label">{% trans "Pick Date" %}</span>
+                            </div>
+                        </button>
+                    </div>
+                    <p id="no-date-error" class="text-rose-500 dark:text-rose-400 text-xs font-semibold mt-2 hidden">{% trans "Please select a date" %}</p>
+                </div>
+
+                <!-- Quick Time Pill Grid -->
+                <div class="mb-5" id="time-section">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5">{% trans "Preferred Time Slot" %}</label>
+                    <input type="hidden" name="time" id="time-hidden" required>
+                    
+                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="time-pills">
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="08:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">8 AM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Morning</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="09:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">9 AM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Morning</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="10:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">10 AM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Morning</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="11:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">11 AM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Morning</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="12:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">12 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Noon</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="13:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">1 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Afternoon</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="14:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">2 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Afternoon</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="15:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">3 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Afternoon</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="16:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">4 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Evening</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="17:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">5 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Evening</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="18:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">6 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Evening</span>
+                        </button>
+                        <button type="button" class="time-pill py-2.5 px-3 rounded-xl text-center text-sm font-bold border transition-all
+                            bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300
+                            hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-slate-800"
+                            data-time="19:00">
+                            <span class="block text-sm font-extrabold text-slate-900 dark:text-white">7 PM</span>
+                            <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">Evening</span>
+                        </button>
+                    </div>
+                    <p id="no-time-error" class="text-rose-500 dark:text-rose-400 text-xs font-semibold mt-2 hidden">{% trans "Please select a time slot" %}</p>
+                </div>
+            </div>
+
+            <!-- Address Search & Autocomplete -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{% trans "Service Address" %}</label>
+                    <button type="button" id="btn-current-location" class="group relative inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-primary-50 to-indigo-50 hover:from-primary-100 hover:to-indigo-100 dark:from-primary-950/80 dark:to-indigo-950/80 dark:hover:from-primary-900/90 dark:hover:to-indigo-900/90 border border-primary-200/90 dark:border-primary-800/80 text-primary-700 dark:text-primary-300 text-xs font-extrabold shadow-2xs hover:shadow-xs transition-all duration-200 active:scale-95 cursor-pointer">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <i data-lucide="crosshair" class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 group-hover:rotate-45 transition-transform duration-300"></i>
+                        <span>{% trans "Use current GPS" %}</span>
+                    </button>
+                </div>
+                <div class="relative">
+                    <input type="text" id="address-search" autocomplete="off"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-900 text-sm text-slate-900 dark:text-white transition"
+                        placeholder="{% trans 'Search address, locality, landmark...' %}">
+                    <div id="address-suggestions" class="absolute z-30 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-floating mt-1 hidden max-h-48 overflow-y-auto"></div>
+                </div>
+                <input type="hidden" name="address_text" id="address_text">
+            </div>
+
+            <!-- Interactive Map Picker -->
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Drag Pin to Exact Location" %}</label>
+                <div id="map" class="h-48 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner"></div>
+                <input type="hidden" name="latitude" id="latitude" value="28.6139">
+                <input type="hidden" name="longitude" id="longitude" value="77.2090">
+            </div>
+
+            <!-- Pricing Input & Transparent Surge Breakdown -->
+            <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{% trans "Estimated Total Price" %}</label>
+                            <span id="surge-badge" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                ⚡ +5% AI + ₹20 Area Surge
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" id="base-price-hint">{% trans "Includes base rate, 5% AI demand factor & area incentive" %}</p>
+                    </div>
+                    <div class="w-full sm:w-44">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-sm font-bold text-slate-500 dark:text-slate-400">₹</span>
+                            <input type="number" name="estimated_price" id="estimated_price" min="0" step="1"
+                                class="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-extrabold text-slate-900 dark:text-white text-right focus:ring-2 focus:ring-primary-500 transition-colors">
+                        </div>
+                        <p id="min-price-error" class="text-rose-500 text-[11px] font-bold mt-1 hidden text-right"></p>
+                    </div>
+                </div>
+
+                <!-- Transparent Fare Breakdown Pill -->
+                <div id="fare-breakdown" class="pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+                    <span id="breakdown-text">Base: ₹0 + 5% Demand: ₹0 + Area Surcharge: ₹20</span>
+                    <span class="text-[10px] text-primary-600 dark:text-primary-400 font-semibold">100% of surge bonus goes to your Saarthi</span>
+                </div>
+            </div>
+
+            <!-- Submit CTA -->
+            <button type="submit"
+                class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-5 rounded-xl shadow-card hover:shadow-floating transition-all text-sm flex items-center justify-center space-x-2 active:scale-[0.99]">
+                <span>{% trans "Find & Match Nearby Saarthi" %}</span>
+                <span>→</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var cards = document.querySelectorAll('.service-card');
+    var stepSelect = document.getElementById('step-select');
+    var stepDetails = document.getElementById('step-details');
+    var selectedInput = document.getElementById('selected_category');
+    var selectedLabel = document.getElementById('selected-label');
+    var priceInput = document.getElementById('estimated_price');
+    var noCatError = document.getElementById('no-category-error');
+
+    // ── Date Chip Logic ──
+    var dateHidden = document.getElementById('date-hidden');
+    var dateChips = document.querySelectorAll('.date-chip');
+    var customDateBtn = document.getElementById('custom-date-btn');
+    var customDateLabel = document.getElementById('custom-date-label');
+    var noDateError = document.getElementById('no-date-error');
+    var datetimeContainer = document.getElementById('datetime-container');
+
+    // ── Time Pill Logic ──
+    var timeHidden = document.getElementById('time-hidden');
+    var timePills = document.querySelectorAll('.time-pill');
+    var noTimeError = document.getElementById('no-time-error');
+
+    // ── Emergency Toggle ──
+    var emergencyToggle = document.getElementById('emergency-toggle');
+
+    // Helper: format date as YYYY-MM-DD
+    function toISO(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    // Helper: format time as HH:MM
+    function toTimeStr(d) {
+        return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+    // Helper: short day/month label
+    function shortLabel(d) {
+        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+    }
+    // Helper: day name
+    function dayName(d) {
+        var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        return days[d.getDay()];
+    }
+
+    // Populate date chip labels on load
+    var today = new Date();
+    for (var i = 0; i < 3; i++) {
+        var d = new Date(today);
+        d.setDate(today.getDate() + i);
+        var labelEl = document.getElementById('date-chip-label-' + i);
+        if (labelEl) labelEl.textContent = shortLabel(d);
+        if (i === 2) {
+            var nameEl = document.getElementById('date-chip-name-2');
+            if (nameEl) nameEl.textContent = dayName(d);
+        }
+    }
+
+    // Active style classes
+    var chipActive = ['border-primary-600', 'dark:border-primary-400', 'bg-primary-50', 'dark:bg-primary-950/80', 'ring-2', 'ring-primary-500/20'];
+    var chipInactive = ['bg-white', 'dark:bg-slate-950/60', 'border-slate-200', 'dark:border-slate-700'];
+
+    function isChipActive(el) {
+        return el.classList.contains('border-primary-600');
+    }
+
+    function clearDateChips() {
+        dateChips.forEach(function(c) {
+            chipActive.forEach(function(cls) { c.classList.remove(cls); });
+            chipInactive.forEach(function(cls) { c.classList.add(cls); });
+        });
+    }
+    function activateChip(chip) {
+        clearDateChips();
+        chipInactive.forEach(function(cls) { chip.classList.remove(cls); });
+        chipActive.forEach(function(cls) { chip.classList.add(cls); });
+        noDateError.classList.add('hidden');
+    }
+    function deactivateChip(chip) {
+        chipActive.forEach(function(cls) { chip.classList.remove(cls); });
+        chipInactive.forEach(function(cls) { chip.classList.add(cls); });
+    }
+
+    // ── Flatpickr for Pick Date button ──
+    var fp = flatpickr(customDateBtn, {
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disableMobile: true,
+        onChange: function(selectedDates, dateStr) {
+            if (selectedDates.length > 0) {
+                dateHidden.value = dateStr;
+                activateChip(customDateBtn);
+                var d = selectedDates[0];
+                customDateLabel.textContent = shortLabel(d);
+                noDateError.classList.add('hidden');
+            }
+        }
+    });
+
+    // Click handlers for quick date chips (with toggle-deselect)
+    dateChips.forEach(function(chip) {
+        if (chip.id === 'custom-date-btn') return;
+        chip.addEventListener('click', function() {
+            if (isChipActive(chip)) {
+                // Deselect
+                deactivateChip(chip);
+                dateHidden.value = '';
+            } else {
+                if (fp) fp.clear();
+                customDateLabel.textContent = '{% trans "Pick Date" %}';
+                var offset = parseInt(chip.dataset.offset);
+                var d = new Date(today);
+                d.setDate(today.getDate() + offset);
+                dateHidden.value = toISO(d);
+                activateChip(chip);
+            }
+        });
+    });
+
+    // ── Time Pill Selection (with toggle-deselect) ──
+    var pillActive = ['border-primary-600', 'dark:border-primary-400', 'bg-primary-50', 'dark:bg-primary-950/80', 'ring-2', 'ring-primary-500/20'];
+    var pillInactive = ['bg-white', 'dark:bg-slate-950/60', 'border-slate-200', 'dark:border-slate-700'];
+
+    function isPillActive(el) {
+        return el.classList.contains('border-primary-600');
+    }
+    function clearTimePills() {
+        timePills.forEach(function(p) {
+            pillActive.forEach(function(cls) { p.classList.remove(cls); });
+            pillInactive.forEach(function(cls) { p.classList.add(cls); });
+        });
+    }
+
+    timePills.forEach(function(pill) {
+        pill.addEventListener('click', function() {
+            if (isPillActive(pill)) {
+                // Deselect
+                pillActive.forEach(function(cls) { pill.classList.remove(cls); });
+                pillInactive.forEach(function(cls) { pill.classList.add(cls); });
+                timeHidden.value = '';
+            } else {
+                clearTimePills();
+                pillInactive.forEach(function(cls) { pill.classList.remove(cls); });
+                pillActive.forEach(function(cls) { pill.classList.add(cls); });
+                timeHidden.value = pill.dataset.time;
+                noTimeError.classList.add('hidden');
+            }
+        });
+    });
+
+    // ── Emergency Toggle: auto-fill current date/time, hide date/time pickers ──
+    emergencyToggle.addEventListener('change', function() {
+        if (emergencyToggle.checked) {
+            // Auto-fill with current date and time
+            var now = new Date();
+            dateHidden.value = toISO(now);
+            timeHidden.value = toTimeStr(now);
+            // Hide the date/time selection UI
+            datetimeContainer.classList.add('hidden');
+            noDateError.classList.add('hidden');
+            noTimeError.classList.add('hidden');
+        } else {
+            // Clear auto-filled values and show pickers again
+            dateHidden.value = '';
+            timeHidden.value = '';
+            clearDateChips();
+            if (fp) fp.clear();
+            customDateLabel.textContent = '{% trans "Pick Date" %}';
+            clearTimePills();
+            datetimeContainer.classList.remove('hidden');
+        }
+    });
+
+    // ── Service Category Card Selection ──
+    cards.forEach(function(card) {
+        card.addEventListener('click', function() {
+            cards.forEach(function(c) {
+                c.classList.remove('border-primary-600', 'dark:border-primary-400', 'bg-primary-50/50', 'dark:bg-slate-800', 'ring-2', 'ring-primary-500/20');
+                c.classList.add('border-slate-200', 'dark:border-slate-800', 'bg-white', 'dark:bg-slate-950/60');
+                var check = c.querySelector('.check-badge');
+                if (check) { check.classList.add('hidden'); check.classList.remove('flex'); }
+            });
+
+            card.classList.remove('border-slate-200', 'dark:border-slate-800', 'bg-white', 'dark:bg-slate-950/60');
+            card.classList.add('border-primary-600', 'dark:border-primary-400', 'bg-primary-50/50', 'dark:bg-slate-800', 'ring-2', 'ring-primary-500/20');
+            var thisCheck = card.querySelector('.check-badge');
+            if (thisCheck) { thisCheck.classList.remove('hidden'); thisCheck.classList.add('flex'); }
+
+            selectedInput.value = card.dataset.id;
+            selectedLabel.innerHTML = card.dataset.icon + ' ' + card.dataset.name;
+            var baseFee = parseFloat(card.dataset.price || 0);
+            if (baseFee > 0) {
+                var demandSurge = Math.round(baseFee * 0.05); // 5% AI Demand Multiplier
+                var lat = parseFloat(document.getElementById('latitude').value || 28.6139);
+                var lng = parseFloat(document.getElementById('longitude').value || 77.2090);
+                var isDense = Math.floor(Math.abs(lat * 100) + Math.abs(lng * 100)) % 2 === 0;
+                var areaSurge = isDense ? 25 : 20; // Rs 20 - 25 area surge charge
+                var totalEstimated = baseFee + demandSurge + areaSurge;
+
+                priceInput.value = totalEstimated;
+                priceInput.min = baseFee;
+
+                var hintEl = document.getElementById('base-price-hint');
+                if (hintEl) {
+                    hintEl.innerHTML = `Base rate for <strong>${card.dataset.name}</strong>: ₹${baseFee} (Minimum: <strong>₹${baseFee}</strong>)`;
+                }
+                var breakdownText = document.getElementById('breakdown-text');
+                if (breakdownText) {
+                    breakdownText.textContent = `Base: ₹${baseFee} + 5% AI Demand: ₹${demandSurge} + Area Surcharge: ₹${areaSurge}`;
+                }
+                var surgeBadge = document.getElementById('surge-badge');
+                if (surgeBadge) {
+                    surgeBadge.textContent = `⚡ +5% AI (+₹${demandSurge}) + ₹${areaSurge} Area Surge`;
+                }
+            }
+            validatePrice();
+
+            noCatError.classList.add('hidden');
+            stepDetails.classList.remove('hidden');
+            stepDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (!window._mapInitialized) {
+                initMap();
+                window._mapInitialized = true;
+            }
+        });
+    });
+
+    // ── Price Validation Logic ──
+    function validatePrice() {
+        var minPrice = parseFloat(priceInput.min || 0);
+        var enteredPrice = parseFloat(priceInput.value || 0);
+        var minPriceError = document.getElementById('min-price-error');
+
+        if (minPrice > 0 && enteredPrice < minPrice) {
+            if (minPriceError) {
+                minPriceError.textContent = `Cannot be less than base fee (₹${minPrice})`;
+                minPriceError.classList.remove('hidden');
+            }
+            priceInput.classList.add('border-rose-500', 'focus:ring-rose-500');
+            return false;
+        } else {
+            if (minPriceError) {
+                minPriceError.classList.add('hidden');
+            }
+            priceInput.classList.remove('border-rose-500', 'focus:ring-rose-500');
+            return true;
+        }
+    }
+
+    priceInput.addEventListener('input', validatePrice);
+
+    priceInput.addEventListener('blur', function() {
+        var minPrice = parseFloat(priceInput.min || 0);
+        var enteredPrice = parseFloat(priceInput.value || 0);
+        if (minPrice > 0 && (isNaN(enteredPrice) || enteredPrice < minPrice)) {
+            priceInput.value = minPrice;
+            validatePrice();
+        }
+    });
+
+    document.getElementById('change-category').addEventListener('click', function() {
+        stepDetails.classList.add('hidden');
+        selectedInput.value = '';
+        stepSelect.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ── Auto-select category if passed in query param or context ──
+    var initialCatId = "{{ selected_category_id|default:'' }}" || new URLSearchParams(window.location.search).get('category') || new URLSearchParams(window.location.search).get('cat');
+    if (initialCatId) {
+        var targetCard = document.querySelector('.service-card[data-id="' + initialCatId + '"]');
+        if (targetCard) {
+            targetCard.click();
+        }
+    }
+
+    // ── Form Validation ──
+    document.getElementById('booking-form').addEventListener('submit', function(e) {
+        var hasErrors = false;
+
+        if (!selectedInput.value) {
+            e.preventDefault();
+            noCatError.classList.remove('hidden');
+            stepSelect.scrollIntoView({ behavior: 'smooth' });
+            hasErrors = true;
+        }
+        if (!validatePrice()) {
+            e.preventDefault();
+            priceInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            priceInput.focus();
+            hasErrors = true;
+        }
+        if (!dateHidden.value) {
+            e.preventDefault();
+            noDateError.classList.remove('hidden');
+            if (!hasErrors) noDateError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            hasErrors = true;
+        }
+        if (!timeHidden.value) {
+            e.preventDefault();
+            noTimeError.classList.remove('hidden');
+            if (!hasErrors) noTimeError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            hasErrors = true;
+        }
+    });
+
+    // ── Map Init ──
+    function initMap() {
+        GigMap.init('map', { center: [28.6139, 77.2090], zoom: 13 });
+
+        GigMap.addMarker('my-location', 28.6139, 77.2090, {
+            emoji: '📍', color: GigMap.ICONS.customer, draggable: true
+        });
+        GigMap.makeDraggablePin('my-location', {
+            latInputId: 'latitude',
+            lonInputId: 'longitude',
+            addressInputId: 'address_text',
+        });
+
+        GigMap.setSearchBox('address-search', 'address-suggestions', {
+            latInputId: 'latitude',
+            lonInputId: 'longitude',
+            addressInputId: 'address_text',
+        });
+
+        document.getElementById('btn-current-location').addEventListener('click', function() {
+            GigMap.useCurrentLocation({
+                buttonId: 'btn-current-location',
+                searchInputId: 'address-search',
+                addressInputId: 'address_text',
+                latInputId: 'latitude',
+                lonInputId: 'longitude',
+            });
+        });
+    }
+
+    // Re-init Lucide icons for this page
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+

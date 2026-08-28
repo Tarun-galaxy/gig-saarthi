@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Notifications" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    
+    <!-- ─── Header Strip with Role-Distinctive Indicator ─── -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <div class="flex items-center space-x-2 mb-1">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">🔔 {% trans "Notifications" %}</h1>
+                {% if is_worker %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    👷 {% trans "Worker Feed" %}
+                </span>
+                {% elif is_customer %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    🏠 {% trans "Customer Feed" %}
+                </span>
+                {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    🏢 {% trans "Admin Feed" %}
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500">
+                {% if is_worker %}
+                    {% trans "Real-time job dispatches, customer reviews, payout settlements & cooperative updates" %}
+                {% else %}
+                    {% trans "Service booking updates, worker live tracking status, payment receipts & invoices" %}
+                {% endif %}
+            </p>
+        </div>
+
+        {% if unread_count > 0 %}
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200/60 px-3.5 py-2 rounded-xl transition shadow-2xs">
+                ✓ {% trans "Mark all as read" %} ({{ unread_count }})
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- ─── Category Filter Tabs ─── -->
+    <div class="flex items-center space-x-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
+        <a href="?type=all"
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 border
+           {% if selected_category == 'all' %}bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs{% else %}bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800{% endif %}">
+            {% trans "All Alerts" %}
+        </a>
+        <a href="?type=jobs"
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 border
+           {% if selected_category == 'jobs' %}bg-primary-600 text-white border-primary-600 shadow-xs{% else %}bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800{% endif %}">
+            {% if is_worker %}💼 {% trans "Job Dispatches" %}{% else %}📋 {% trans "Service Orders" %}{% endif %}
+        </a>
+        <a href="?type=payments"
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 border
+           {% if selected_category == 'payments' %}bg-emerald-600 text-white border-emerald-600 shadow-xs{% else %}bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800{% endif %}">
+            💰 {% trans "Payouts & Invoices" %}
+        </a>
+        <a href="?type=account"
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex-shrink-0 border
+           {% if selected_category == 'account' %}bg-indigo-600 text-white border-indigo-600 shadow-xs{% else %}bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800{% endif %}">
+            🛡️ {% trans "KYC & Account" %}
+        </a>
+    </div>
+
+    <!-- ─── Distinctive Notifications Feed ─── -->
+    <div class="space-y-3">
+        {% for notification in notifications %}
+        <div class="bg-white rounded-2xl border transition-all p-4 sm:p-5 shadow-subtle hover:shadow-card
+            {% if not notification.is_read %}border-primary-300 ring-1 ring-primary-500/10 bg-primary-50/10{% else %}border-slate-200/80{% endif %}">
+            
+            <div class="flex items-start space-x-3.5">
+                <!-- Distinctive Semantic Category Icon -->
+                <div class="text-2xl p-2.5 rounded-2xl border flex-shrink-0 shadow-xs
+                    {% if notification.notification_type == 'booking_request' and is_worker %}bg-emerald-50 border-emerald-200 text-emerald-600
+                    {% elif notification.notification_type == 'payment_received' and is_worker %}bg-emerald-50 border-emerald-200 text-emerald-600
+                    {% elif notification.notification_type == 'review_received' %}bg-amber-50 border-amber-200 text-amber-500
+                    {% elif notification.notification_type == 'verification_approved' %}bg-indigo-50 border-indigo-200 text-indigo-600
+                    {% elif notification.notification_type == 'verification_rejected' %}bg-rose-50 border-rose-200 text-rose-600
+                    {% elif notification.notification_type == 'booking_accepted' %}bg-indigo-50 border-indigo-200 text-indigo-600
+                    {% elif notification.notification_type == 'booking_completed' %}bg-emerald-50 border-emerald-200 text-emerald-600
+                    {% else %}bg-surface-100 border-slate-200 text-slate-600{% endif %}">
+                    {% if notification.notification_type == 'booking_request' and is_worker %}🛵
+                    {% elif notification.notification_type == 'booking_request' %}📋
+                    {% elif notification.notification_type == 'booking_accepted' and is_worker %}✓
+                    {% elif notification.notification_type == 'booking_accepted' %}🛵
+                    {% elif notification.notification_type == 'booking_completed' %}🎉
+                    {% elif notification.notification_type == 'payment_received' and is_worker %}💰
+                    {% elif notification.notification_type == 'payment_received' %}🧾
+                    {% elif notification.notification_type == 'review_received' %}⭐
+                    {% elif notification.notification_type == 'verification_approved' %}🛡️
+                    {% elif notification.notification_type == 'verification_rejected' %}⚠️
+                    {% else %}🔔{% endif %}
+                </div>
+
+                <!-- Notification Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center space-x-2">
+                            <!-- Distinctive Role Badge -->
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider
+                                {% if is_worker and notification.notification_type == 'booking_request' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                                {% elif is_worker and notification.notification_type == 'payment_received' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                                {% elif is_worker and notification.notification_type == 'review_received' %}bg-amber-50 text-amber-800 border-amber-200
+                                {% elif is_worker %}bg-indigo-50 text-indigo-700 border-indigo-200
+                                {% elif notification.notification_type == 'booking_accepted' %}bg-indigo-50 text-indigo-700 border-indigo-200
+                                {% elif notification.notification_type == 'payment_received' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                                {% else %}bg-surface-100 text-slate-700 border-slate-200{% endif %}">
+                                {% if is_worker and notification.notification_type == 'booking_request' %}{% trans "Job Dispatch" %}
+                                {% elif is_worker and notification.notification_type == 'payment_received' %}{% trans "Worker Payout" %}
+                                {% elif is_worker and notification.notification_type == 'review_received' %}{% trans "Customer Review" %}
+                                {% elif is_worker and notification.notification_type == 'verification_approved' %}{% trans "KYC Approved" %}
+                                {% elif is_customer and notification.notification_type == 'booking_accepted' %}{% trans "Worker Assigned" %}
+                                {% elif is_customer and notification.notification_type == 'booking_completed' %}{% trans "Service Complete" %}
+                                {% elif is_customer and notification.notification_type == 'payment_received' %}{% trans "Payment Receipt" %}
+                                {% else %}{% trans "Alert" %}{% endif %}
+                            </span>
+
+                            {% if not notification.is_read %}
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary-600 ring-2 ring-primary-100"></span>
+                            {% endif %}
+                        </div>
+
+                        <span class="text-[10px] text-slate-400 font-mono flex-shrink-0">{{ notification.created_at|timesince }} {% trans "ago" %}</span>
+                    </div>
+
+                    <h3 class="font-extrabold text-xs sm:text-sm text-slate-900">{{ notification.title }}</h3>
+                    <p class="text-xs text-slate-600 mt-1 leading-relaxed">{{ notification.message }}</p>
+
+                    <!-- Context Action Link -->
+                    {% if notification.related_booking %}
+                    <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500 font-mono">
+                            #{{ notification.related_booking.pk }} &middot; {{ notification.related_booking.service_category.name }}
+                        </span>
+                        
+                        {% if is_worker %}
+                        <a href="{% url 'workers:dashboard' %}" class="inline-flex items-center space-x-1 text-xs font-bold text-primary-600 hover:text-primary-700 transition">
+                            <span>{% trans "View on Dashboard" %}</span>
+                            <span>→</span>
+                        </a>
+                        {% else %}
+                        <a href="{% url 'bookings:detail' pk=notification.related_booking.pk %}" class="inline-flex items-center space-x-1 text-xs font-bold text-primary-600 hover:text-primary-700 transition">
+                            <span>{% trans "View Booking Details" %}</span>
+                            <span>→</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mark Read Action -->
+                {% if not notification.is_read %}
+                <form method="post" action="{% url 'notifications:mark_read' pk=notification.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-7 h-7 rounded-xl bg-surface-50 hover:bg-primary-50 text-slate-400 hover:text-primary-600 border border-slate-200 hover:border-primary-300 text-xs font-bold flex items-center justify-center transition shadow-2xs" title="{% trans 'Mark as read' %}">✓</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="p-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80 shadow-subtle">
+            <p class="text-4xl mb-3">🔔</p>
+            <h3 class="text-sm font-bold text-slate-800 mb-1">{% trans "No notifications found" %}</h3>
+            <p class="text-xs text-slate-500">{% trans "You have no notifications in this category." %}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+

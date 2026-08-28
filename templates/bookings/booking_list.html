@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "My Bookings" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    
+    <!-- Top Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
+                <i data-lucide="clipboard-list" class="w-7 h-7 text-primary-500"></i>
+                <span>{% trans "Bookings & Job History" %}</span>
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">{% trans "Track the lifecycle, receipts, and ratings of all service requests" %}</p>
+        </div>
+        {% if user.is_customer %}
+        <a href="{% url 'bookings:create' %}" class="inline-flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition active:scale-[0.98]">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>{% trans "New Booking" %}</span>
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Status Filters Bar -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+        <a href="{% url 'bookings:list' %}"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {% if not status_filter %}bg-primary-600 text-white shadow-md{% else %}bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %}">
+            {% trans "All" %}
+        </a>
+        {% for value, label in status_choices %}
+        <a href="{% url 'bookings:list' %}?status={{ value }}"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {% if status_filter == value %}bg-primary-600 text-white shadow-md{% else %}bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Booking List Cards -->
+    <div class="space-y-3.5">
+        {% for booking in bookings %}
+        <a href="{% url 'bookings:detail' pk=booking.pk %}"
+            class="block bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary-500 dark:hover:border-primary-400 shadow-sm hover:shadow-md transition-all p-5 group">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start sm:items-center space-x-4">
+                    <div class="text-3xl p-3 bg-primary-50 dark:bg-primary-950/70 rounded-2xl border border-primary-100 dark:border-primary-800/60 group-hover:scale-105 transition-transform flex-shrink-0">
+                        {{ booking.service_category.icon }}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                {{ booking.service_category.name }}
+                            </h3>
+                            <span class="text-xs text-slate-400 dark:text-slate-500 font-mono font-bold">#{{ booking.pk }}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {% if user.is_customer %}
+                                {% trans "Assigned" %}: <span class="font-bold text-slate-800 dark:text-slate-200">{{ booking.worker.get_full_name|default:_("Matching nearby...") }}</span>
+                            {% else %}
+                                {% trans "Customer" %}: <span class="font-bold text-slate-800 dark:text-slate-200">{{ booking.customer.get_full_name|default:booking.customer.username }}</span>
+                            {% endif %}
+                        </p>
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center space-x-1.5">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+                            <span>{{ booking.created_at|date:"d M Y, g:i A" }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-extrabold border
+                            {% if booking.status == 'completed' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                            {% elif booking.status == 'in_progress' %}bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800
+                            {% elif booking.status == 'accepted' %}bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800
+                            {% elif booking.status == 'matched' %}bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                            {% elif booking.status == 'pending' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                            {% elif 'cancelled' in booking.status %}bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800
+                            {% else %}bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700{% endif %}">
+                            <span class="w-1.5 h-1.5 rounded-full {% if booking.status == 'completed' %}bg-emerald-500{% elif booking.status == 'in_progress' %}bg-blue-500 animate-ping{% elif booking.status == 'pending' %}bg-amber-500 animate-pulse{% elif 'cancelled' in booking.status %}bg-rose-500{% else %}bg-indigo-500{% endif %}"></span>
+                            <span>{{ booking.get_status_display }}</span>
+                        </span>
+                        {% if booking.is_emergency %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800 animate-pulse">
+                            🚨 {% trans "URGENT" %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if booking.estimated_price %}
+                    <p class="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1 sm:mt-2">₹{{ booking.estimated_price|floatformat:0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="text-center py-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-8">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-50 dark:bg-primary-950/70 text-primary-500 flex items-center justify-center">
+                <i data-lucide="inbox" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-1">{% trans "No bookings found" %}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">{% trans "You haven't requested any services in this status category yet." %}</p>
+            {% if user.is_customer %}
+            <a href="{% url 'bookings:create' %}" class="inline-flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>{% trans "Create Your First Booking" %}</span>
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Admin Dashboard" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+        <div>
+            <div class="flex items-center space-x-2.5">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-black">
+                    🏢
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                            {% trans "Cooperative Admin Console" %}
+                        </h1>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                            {% trans "Federation Admin" %}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>{% trans "Real-time federation telemetry & dispatch stream active" %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2.5 flex-wrap">
+            <a href="{% url 'cooperative_admin:worker_verification' %}"
+                class="inline-flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                <span>🛡️</span>
+                <span>{% trans "Verify Workers" %}</span>
+                {% if pending_workers %}
+                <span class="ml-1 bg-white text-amber-800 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold">{{ pending_workers }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'cooperative_admin:admin_booking_monitor' %}"
+                class="inline-flex items-center space-x-1.5 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                <span>📋</span>
+                <span>{% trans "Live Booking Monitor" %}</span>
+            </a>
+            <a href="{% url 'cooperative_admin:insurance_management' %}"
+                class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                <span>🛡️</span>
+                <span>{% trans "Safety Pool (5%)" %}</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards Metric Grid with Gradient Borders -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{% trans "Active Workers" %}</p>
+                <span class="text-base">👷</span>
+            </div>
+            <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ total_workers }}</p>
+            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center space-x-1">
+                <span>●</span>
+                <span>{{ verified_workers }} verified · {{ available_workers }} online</span>
+            </p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{% trans "Active Bookings" %}</p>
+                <span class="text-base">⚡</span>
+            </div>
+            <p class="text-2xl font-black text-primary-600 dark:text-primary-400 mt-1">{{ active_bookings }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ pending_bookings }} pending · {{ disputed_bookings }} alert</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{% trans "Monthly Revenue" %}</p>
+                <span class="text-base">💰</span>
+            </div>
+            <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">₹{{ monthly_revenue|floatformat:0 }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">₹{{ monthly_platform_fee|floatformat:0 }} {% trans "coop fee (5%)" %}</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{% trans "Avg Saarthi Rating" %}</p>
+                <span class="text-base">⭐</span>
+            </div>
+            <p class="text-2xl font-black text-amber-500 mt-1">{{ avg_rating }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ completed_bookings }} {% trans "jobs completed" %}</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{% trans "Safety Insurance" %}</p>
+                <span class="text-base">🛡️</span>
+            </div>
+            <p class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{{ active_insurance }}</p>
+            <p class="text-xs text-amber-700 dark:text-amber-400 mt-1 font-semibold">{{ expiring_insurance }} {% trans "expiring soon" %}</p>
+        </div>
+    </div>
+
+    <!-- Pending Verifications Alert Ribbon -->
+    {% if pending_workers > 0 %}
+    <div class="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div class="flex items-center space-x-3">
+            <span class="text-2xl">⚠️</span>
+            <div>
+                <p class="font-bold text-xs sm:text-sm text-amber-900 dark:text-amber-200">
+                    {{ pending_workers }} {% trans "worker applications pending KYC verification" %}
+                </p>
+                <p class="text-[11px] text-amber-700 dark:text-amber-400">{% trans "Review uploaded Aadhaar/PAN cards and trade certificates" %}</p>
+            </div>
+        </div>
+        <a href="{% url 'cooperative_admin:worker_verification' %}"
+            class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition whitespace-nowrap">
+            {% trans "Review Queue" %} →
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Flagged Reviews Alert Ribbon -->
+    {% if flagged_reviews %}
+    <div class="bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-2xl p-4 mb-6 shadow-xs">
+        <h3 class="font-bold text-xs text-rose-900 dark:text-rose-200 mb-3 flex items-center space-x-1.5">
+            <span>🚩</span>
+            <span>{% trans "Flagged Reviews Requiring Attention" %} ({{ flagged_reviews|length }})</span>
+        </h3>
+        <div class="space-y-2">
+            {% for review in flagged_reviews %}
+            <div class="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-rose-100 dark:border-rose-900/60 text-xs">
+                <div>
+                    <span class="font-bold text-slate-900 dark:text-white">{{ review.customer.get_full_name }}</span>
+                    <span class="text-slate-400">rated</span>
+                    <span class="font-bold text-slate-900 dark:text-white">{{ review.worker.get_full_name }}</span>
+                    <span class="text-amber-500 font-bold ml-1">{{ review.overall_rating }}★</span>
+                    {% if review.comment %}<span class="text-slate-500 dark:text-slate-400 italic ml-1">— "{{ review.comment|truncatewords:8 }}"</span>{% endif %}
+                </div>
+                <span class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">{{ review.created_at|timesince }} ago</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Grid: Interactive Live Bookings Table & Cooperative Society Roster -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+         x-data="{
+             searchQuery: '',
+             statusFilter: 'all',
+             matches(status, id, customer, worker, service) {
+                 const q = this.searchQuery.toLowerCase().trim();
+                 const matchesQuery = !q || id.includes(q) || customer.toLowerCase().includes(q) || worker.toLowerCase().includes(q) || service.toLowerCase().includes(q);
+                 const matchesStatus = this.statusFilter === 'all' || 
+                     (this.statusFilter === 'active' && (status === 'in_progress' || status === 'accepted' || status === 'matched')) ||
+                     (this.statusFilter === status);
+                 return matchesQuery && matchesStatus;
+             }
+         }">
+
+        <!-- Interactive Recent Bookings Command Table (2 cols) -->
+        <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle overflow-hidden flex flex-col justify-between">
+            <div>
+                <!-- Table Header & Live Controls -->
+                <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <div>
+                                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white">{% trans "Live Recent Bookings" %}</h2>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">{% trans "Interactive dispatch roster & status telemetry" %}</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'cooperative_admin:admin_booking_monitor' %}" class="inline-flex items-center space-x-1 text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline">
+                            <span>{% trans "Full Monitor Console" %}</span>
+                            <span>→</span>
+                        </a>
+                    </div>
+
+                    <!-- Search & Quick Filter Pills Toolbar -->
+                    <div class="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+                        <!-- Search Box -->
+                        <div class="relative flex-1">
+                            <input type="text"
+                                x-model="searchQuery"
+                                placeholder="{% trans 'Search ID, customer, worker, service...' %}"
+                                class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-surface-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500">
+                            <span class="absolute left-2.5 top-2 text-slate-400 text-xs">🔍</span>
+                        </div>
+
+                        <!-- Interactive Filter Tabs -->
+                        <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
+                            <button type="button" @click="statusFilter = 'all'"
+                                :class="statusFilter === 'all' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs' : 'bg-surface-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap">
+                                {% trans "All" %}
+                            </button>
+                            <button type="button" @click="statusFilter = 'active'"
+                                :class="statusFilter === 'active' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-surface-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60'"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap flex items-center space-x-1">
+                                <span>⚡</span>
+                                <span>{% trans "Active" %}</span>
+                            </button>
+                            <button type="button" @click="statusFilter = 'pending'"
+                                :class="statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'bg-surface-50 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/60'"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap flex items-center space-x-1">
+                                <span>⏳</span>
+                                <span>{% trans "Pending" %}</span>
+                            </button>
+                            <button type="button" @click="statusFilter = 'completed'"
+                                :class="statusFilter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-surface-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60'"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap flex items-center space-x-1">
+                                <span>✅</span>
+                                <span>{% trans "Done" %}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Content -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-surface-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                            <tr>
+                                <th class="px-4 py-3">#ID</th>
+                                <th class="px-4 py-3">{% trans "Customer" %}</th>
+                                <th class="px-4 py-3">{% trans "Service & Price" %}</th>
+                                <th class="px-4 py-3">{% trans "Assigned Saarthi" %}</th>
+                                <th class="px-4 py-3">{% trans "Status" %}</th>
+                                <th class="px-4 py-3 text-right">{% trans "Action" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            {% for booking in recent_bookings %}
+                            <tr class="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 cursor-pointer transition-all group"
+                                onclick="window.location='{% url 'bookings:detail' pk=booking.pk %}'"
+                                x-show="matches('{{ booking.status }}', '{{ booking.id }}', '{{ booking.customer.get_full_name|default:booking.customer.username|escapejs }}', '{{ booking.worker.get_full_name|default:''|escapejs }}', '{{ booking.service_category.name|escapejs }}')">
+                                
+                                <!-- ID Badge -->
+                                <td class="px-4 py-3">
+                                    <span class="font-mono font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-800">
+                                        #{{ booking.id }}
+                                    </span>
+                                </td>
+
+                                <!-- Customer -->
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold flex items-center justify-center text-[10px] shrink-0 border border-slate-200 dark:border-slate-700">
+                                            {{ booking.customer.first_name|first|default:booking.customer.username|first|upper }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-extrabold text-slate-900 dark:text-white truncate">
+                                                {{ booking.customer.get_full_name|default:booking.customer.username }}
+                                            </p>
+                                            {% if booking.is_emergency %}
+                                            <span class="text-[9px] font-extrabold text-rose-500 uppercase tracking-wider">🚨 Emergency</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Service & Price -->
+                                <td class="px-4 py-3">
+                                    <div>
+                                        <div class="flex items-center space-x-1.5 font-bold text-slate-800 dark:text-slate-200">
+                                            <span>{{ booking.service_category.icon }}</span>
+                                            <span class="truncate">{{ booking.service_category.name }}</span>
+                                        </div>
+                                        <div class="mt-0.5">
+                                            <span class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/60">
+                                                ₹{{ booking.final_price|default:booking.estimated_price|floatformat:0 }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Assigned Worker -->
+                                <td class="px-4 py-3">
+                                    {% if booking.worker %}
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-extrabold flex items-center justify-center text-[9px] shrink-0 border border-indigo-200 dark:border-indigo-800">
+                                            {{ booking.worker.first_name|first|default:booking.worker.username|first|upper }}
+                                        </div>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200 truncate">
+                                            {{ booking.worker.get_full_name|default:booking.worker.username }}
+                                        </span>
+                                    </div>
+                                    {% else %}
+                                    <span class="inline-flex items-center space-x-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        <span>{% trans "Awaiting Saarthi" %}</span>
+                                    </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Status Badge with Glowing Indicators -->
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-xs
+                                        {% if booking.status == 'completed' %}bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                                        {% elif booking.status == 'in_progress' %}bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 animate-pulse
+                                        {% elif booking.status == 'accepted' %}bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800
+                                        {% elif booking.status == 'matched' %}bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                                        {% elif booking.status == 'pending' %}bg-orange-50 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800
+                                        {% elif booking.status == 'disputed' %}bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800
+                                        {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700{% endif %}">
+                                        
+                                        {% if booking.status == 'completed' %}● {% elif booking.status == 'in_progress' %}⚡ {% elif booking.status == 'matched' %}🤝 {% endif %}
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                </td>
+
+                                <!-- Action Button -->
+                                <td class="px-4 py-3 text-right">
+                                    <span class="inline-flex items-center space-x-1 text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 font-bold group-hover:translate-x-0.5 transition-transform">
+                                        <span>{% trans "View" %}</span>
+                                        <span>→</span>
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-4 py-10 text-center text-slate-400">
+                                    <p class="text-3xl mb-2">📋</p>
+                                    <p class="text-xs font-semibold">{% trans "No recent bookings in telemetry stream" %}</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer Strip -->
+            <div class="px-5 py-3 bg-surface-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span>{% trans "Showing recent bookings feed" %}</span>
+                <span class="font-bold text-primary-600 dark:text-primary-400">{% trans "Auto-refreshing every 30s" %}</span>
+            </div>
+        </div>
+
+        <!-- Cooperative Societies (1 col) -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                        <span>🏛️</span>
+                        <span>{% trans "Cooperative Federations" %}</span>
+                    </h2>
+                    <a href="{% url 'cooperative_admin:cooperative_list' %}" class="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline">{% trans "View All" %} →</a>
+                </div>
+                <div class="p-4 space-y-2.5">
+                    {% for coop in cooperatives %}
+                    <a href="{% url 'cooperative_admin:cooperative_detail' pk=coop.pk %}" class="block p-3.5 bg-surface-50 dark:bg-slate-800/70 rounded-xl hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 border border-slate-100 dark:border-slate-700/80 hover:border-indigo-200 dark:hover:border-indigo-700 transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-bold text-xs text-slate-900 dark:text-white">{{ coop.name }}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{{ coop.region }} · {{ coop.get_federation_level_display }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-base font-extrabold text-primary-600 dark:text-primary-400">{{ coop.num_workers }}</p>
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{% trans "Saarthis" %}</p>
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <p class="text-center text-slate-400 py-6 text-xs">{% trans "No cooperatives registered yet" %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800">
+                <a href="{% url 'cooperative_admin:cooperative_list' %}" class="w-full py-2.5 flex items-center justify-center space-x-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 rounded-xl border border-indigo-200 dark:border-indigo-800 transition">
+                    <span>🏢</span>
+                    <span>{% trans "Federation Directory" %}</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+        <!-- Booking Status Distribution Doughnut Chart -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>📊</span>
+                    <span>{% trans "Booking Status Distribution" %}</span>
+                </h2>
+                <span class="text-[11px] text-slate-400 font-semibold">{% trans "Real-time" %}</span>
+            </div>
+            <div class="h-64">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Weekly Revenue Bar Chart -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>💰</span>
+                    <span>{% trans "Weekly Gross Volume (INR)" %}</span>
+                </h2>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">{% trans "5% Platform Fee Included" %}</span>
+            </div>
+            <div class="h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Demand Forecasting Section -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-2">
+            <div>
+                <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>🤖</span>
+                    <span>{% trans "AI Demand Forecasting (Next 7 Days)" %}</span>
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{% trans "Statistical moving average & seasonal multipliers by trade category" %}</p>
+            </div>
+            {% if has_forecast_data and forecast_summary.total_shortages > 0 %}
+            <span class="inline-flex items-center px-3 py-1 bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-full text-xs font-bold animate-pulse">
+                ⚠️ {{ forecast_summary.total_shortages }} {% trans "shortages predicted" %}
+            </span>
+            {% endif %}
+        </div>
+
+        {% if has_forecast_data %}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+            {% for cat_name, cat_data in forecast_summary.by_category.items %}
+            <div class="p-3.5 rounded-xl border {% if cat_data.shortages > 0 %}bg-rose-50/70 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800{% else %}bg-surface-50 dark:bg-slate-800 border-slate-200/70 dark:border-slate-700{% endif %}">
+                <p class="font-bold text-xs {% if cat_data.shortages > 0 %}text-rose-900 dark:text-rose-200{% else %}text-slate-800 dark:text-slate-200{% endif %}">{{ cat_name }}</p>
+                <p class="text-xl font-extrabold {% if cat_data.shortages > 0 %}text-rose-600 dark:text-rose-400{% else %}text-primary-600 dark:text-primary-400{% endif %} mt-1">
+                    {{ cat_data.total_demand }}
+                </p>
+                <p class="text-[11px] text-slate-400">{% trans "predicted bookings" %}</p>
+                {% if cat_data.shortages > 0 %}
+                <p class="text-[11px] font-extrabold text-rose-600 dark:text-rose-400 mt-1">⚠️ {{ cat_data.shortages }}d capacity shortage</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="h-64"><canvas id="forecastChart"></canvas></div>
+        {% else %}
+        <div class="h-48 bg-surface-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-700">
+            <div class="text-center">
+                <p class="text-3xl mb-2">📈</p>
+                <p class="text-xs font-semibold">{% trans "No forecast telemetry generated yet" %}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Booking Status Doughnut Chart
+const statusData = {{ booking_status_dist|safe }};
+const statusLabels = statusData.map(d => d.status);
+const statusCounts = statusData.map(d => d.count);
+const statusColors = {
+    'pending': '#f59e0b', 'matched': '#d97706', 'accepted': '#4f46e5',
+    'in_progress': '#3b82f6', 'completed': '#10b981', 'disputed': '#e11d48',
+    'cancelled_by_customer': '#f43f5e', 'cancelled_by_worker': '#fb7185'
+};
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: statusLabels.map(s => s.replace('_', ' ')),
+        datasets: [{
+            data: statusCounts,
+            backgroundColor: statusLabels.map(s => statusColors[s] || '#94a3b8'),
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11, family: '"Plus Jakarta Sans", sans-serif' } } } }
+    }
+});
+
+// Weekly Revenue Bar Chart
+const revenueData = {{ weekly_revenue|safe }};
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: revenueData.map(d => d.date),
+        datasets: [{
+            label: 'Revenue (INR)',
+            data: revenueData.map(d => d.amount),
+            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1, borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, title: { display: true, text: 'INR (₹)' } }, x: { grid: { display: false } } }
+    }
+});
+
+{% if has_forecast_data %}
+// Demand Forecast Bar Chart
+const forecastLabels = [{% for cat_name, cat_data in forecast_summary.by_category.items %}'{{ cat_name }}',{% endfor %}];
+const forecastDemand = [{% for cat_name, cat_data in forecast_summary.by_category.items %}{{ cat_data.total_demand }},{% endfor %}];
+const forecastShortages = [{% for cat_name, cat_data in forecast_summary.by_category.items %}{{ cat_data.shortages }},{% endfor %}];
+
+new Chart(document.getElementById('forecastChart'), {
+    type: 'bar',
+    data: {
+        labels: forecastLabels,
+        datasets: [{
+            label: 'Predicted Demand',
+            data: forecastDemand,
+            backgroundColor: forecastShortages.map(s => s > 0 ? 'rgba(225, 29, 72, 0.7)' : 'rgba(79, 70, 229, 0.7)'),
+            borderColor: forecastShortages.map(s => s > 0 ? 'rgba(225, 29, 72, 1)' : 'rgba(79, 70, 229, 1)'),
+            borderWidth: 1, borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, title: { display: true, text: 'Predicted Demand' } }, x: { grid: { display: false } } }
+    }
+});
+{% endif %}
+
+// Auto-refresh stats every 30 seconds
+setInterval(() => {
+    fetch("{% url 'cooperative_admin:admin_api_stats' %}")
+        .then(r => r.json())
+        .then(data => {}).catch(() => {});
+}, 30000);
+</script>
+{% endblock %}
+

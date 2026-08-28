@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Cooperatives" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-2xl sm:text-3xl font-bold mb-6">🏢 {% trans "Cooperatives" %}</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for coop in cooperatives %}
+        <a href="{% url 'cooperative_admin:cooperative_detail' pk=coop.pk %}"
+            class="bg-white rounded-xl shadow hover:shadow-md transition p-6">
+            <h3 class="font-bold text-lg mb-1">{{ coop.name }}</h3>
+            <p class="text-sm text-gray-500 mb-3">{{ coop.region }} — {{ coop.get_federation_level_display }}</p>
+            <div class="flex items-center justify-between">
+                <span class="text-2xl font-bold text-primary-600">{{ coop.num_workers }}</span>
+                <span class="text-sm text-gray-500">{% trans "workers" %}</span>
+            </div>
+        </a>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <p class="text-gray-500">{% trans "No cooperatives found" %}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

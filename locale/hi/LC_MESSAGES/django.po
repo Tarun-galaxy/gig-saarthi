@@ -1,0 +1,506 @@
+# Hindi translations for Gig Saarthi.
+msgid ""
+msgstr ""
+"Project-Id-Version: gigsaarthi\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-27 22:06+0530\n"
+"PO-Revision-Date: 2026-08-27 22:06+0530\n"
+"Last-Translator: Gig Saarthi Team\n"
+"Language-Team: Hindi\n"
+"Language: hi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# ── Navigation ────────────────────────────────────────────────────
+
+msgid "Dashboard"
+msgstr "डैशबोर्ड"
+
+msgid "Workers"
+msgstr "श्रमिक"
+
+msgid "Book Service"
+msgstr "सेवा बुक करें"
+
+msgid "Admin"
+msgstr "प्रशासन"
+
+msgid "Login"
+msgstr "लॉगिन"
+
+msgid "Sign Up"
+msgstr "साइन अप"
+
+msgid "Logout"
+msgstr "लॉगआउट"
+
+msgid "Profile"
+msgstr "प्रोफ़ाइल"
+
+msgid "Notifications"
+msgstr "सूचनाएँ"
+
+# ── Home Page ─────────────────────────────────────────────────────
+
+msgid "Your trusted cooperative platform for household and community services"
+msgstr "घरेलू और सामुदायिक सेवाओं के लिए आपका विश्वसनीय सहकारी मंच"
+
+msgid "Powered by cooperatives. Built for workers and customers."
+msgstr "सहकारों द्वारा संचालित। श्रमिकों और ग्राहकों के लिए निर्मित।"
+
+msgid "Get Started"
+msgstr "शुरू करें"
+
+msgid "Find a Worker"
+msgstr "श्रमिक खोजें"
+
+msgid "Why Gig Saarthi?"
+msgstr "गिग सारथी क्यों?"
+
+msgid "Cooperative Model"
+msgstr "सहकारी मॉडल"
+
+msgid "Workers organize through cooperatives, ensuring fair wages, insurance, and dignity."
+msgstr "श्रमिक सहकारों के माध्यम से संगठित होते हैं, जो उचित वेतन, बीमा और सम्मान सुनिश्चित करते हैं।"
+
+msgid "Smart Geo-Matching"
+msgstr "स्मार्ट जियो-मैचिंग"
+
+msgid "Find verified, nearby workers instantly — rated and trusted by your community."
+msgstr "सत्यापित, निकटतम श्रमिकों को तुरंत खोजें — आपके समुदाय द्वारा रेटेड और विश्वसनीय।"
+
+msgid "AI Demand Forecasting"
+msgstr "AI मांग पूर्वानुमान"
+
+msgid "Predictive analytics help cooperatives allocate workers where they're needed most."
+msgstr "भविष्यवाणी विश्लेषण सहकारों को श्रमिकों को उन स्थानों पर आवंटित करने में मदद करता है जहाँ उनकी सबसे अधिक आवश्यकता है।"
+
+msgid "Services Available"
+msgstr "उपलब्ध सेवाएँ"
+
+msgid "Ready to find trusted help?"
+msgstr "विश्वसनीय सहायता खोजने के लिए तैयार?"
+
+msgid "Join thousands of workers and customers on Gig Saarthi"
+msgstr "गिग सारथी पर हज़ारों श्रमिकों और ग्राहकों से जुड़ें"
+
+msgid "Join Now — It's Free"
+msgstr "अभी जुड़ें — यह मुफ़्त है"
+
+# ── Authentication ────────────────────────────────────────────────
+
+msgid "Sign in to your account"
+msgstr "अपने खाते में साइन इन करें"
+
+msgid "Username or Phone"
+msgstr "उपयोगकर्ता नाम या फ़ोन"
+
+msgid "Enter username or phone number"
+msgstr "उपयोगकर्ता नाम या फ़ोन नंबर दर्ज करें"
+
+msgid "Password"
+msgstr "पासवर्ड"
+
+msgid "Enter password"
+msgstr "पासवर्ड दर्ज करें"
+
+msgid "Sign In"
+msgstr "साइन इन करें"
+
+msgid "Don't have an account?"
+msgstr "खाता नहीं है?"
+
+msgid "Create your account"
+msgstr "अपना खाता बनाएँ"
+
+msgid "I want to..."
+msgstr "मैं चाहता/चाहती हूँ..."
+
+msgid "Hire Workers"
+msgstr "श्रमिक नियुक्त करें"
+
+msgid "I need services"
+msgstr "मुझे सेवाओं की आवश्यकता है"
+
+msgid "Offer Services"
+msgstr "सेवाएँ प्रदान करें"
+
+msgid "I'm a worker"
+msgstr "मैं एक श्रमिक हूँ"
+
+msgid "First Name"
+msgstr "पहला नाम"
+
+msgid "Last Name"
+msgstr "उपनाम"
+
+msgid "Username"
+msgstr "उपयोगकर्ता नाम"
+
+msgid "Choose a username"
+msgstr "उपयोगकर्ता नाम चुनें"
+
+msgid "Phone Number"
+msgstr "फ़ोन नंबर"
+
+msgid "Email (optional)"
+msgstr "ईमेल (वैकल्पिक)"
+
+msgid "Confirm Password"
+msgstr "पासवर्ड की पुष्टि करें"
+
+msgid "At least 8 characters"
+msgstr "कम से कम 8 अक्षर"
+
+msgid "Re-enter password"
+msgstr "पासवर्ड दोबारा दर्ज करें"
+
+msgid "Continue to Phone Verification"
+msgstr "फ़ोन सत्यापन जारी रखें"
+
+msgid "Already have an account?"
+msgstr "पहले से खाता है?"
+
+# ── OTP ───────────────────────────────────────────────────────────
+
+msgid "Verify Your Phone"
+msgstr "अपना फ़ोन सत्यापित करें"
+
+msgid "Enter the 6-digit code sent to"
+msgstr "6 अंकों का कोड दर्ज करें जो भेजा गया है"
+
+msgid "Verification Code"
+msgstr "सत्यापन कोड"
+
+msgid "Code expires in"
+msgstr "कोड की समय सीमा"
+
+msgid "minutes"
+msgstr "मिनट"
+
+msgid "Verify & Complete Registration"
+msgstr "सत्यापित करें और पंजीकरण पूरा करें"
+
+msgid "Didn't receive the code?"
+msgstr "कोड नहीं मिला?"
+
+msgid "Resend OTP"
+msgstr "OTP पुनः भेजें"
+
+msgid "Wrong number?"
+msgstr "गलत नंबर?"
+
+msgid "Start Over"
+msgstr "फिर से शुरू करें"
+
+# ── Dashboard ─────────────────────────────────────────────────────
+
+msgid "Welcome"
+msgstr "स्वागत है"
+
+msgid "Manage your jobs and profile"
+msgstr "अपनी नौकरियाँ और प्रोफ़ाइल प्रबंधित करें"
+
+msgid "Find trusted workers for your needs"
+msgstr "अपनी आवश्यकताओं के लिए विश्वसनीय श्रमिक खोजें"
+
+msgid "Cooperative administration dashboard"
+msgstr "सहकारी प्रशासन डैशबोर्ड"
+
+msgid "New Booking"
+msgstr "नई बुकिंग"
+
+msgid "My Bookings"
+msgstr "मेरी बुकिंग"
+
+msgid "Find Workers"
+msgstr "श्रमिक खोजें"
+
+msgid "Payments"
+msgstr "भुगतान"
+
+# ── Bookings ──────────────────────────────────────────────────────
+
+msgid "Book a Service"
+msgstr "सेवा बुक करें"
+
+msgid "What service do you need?"
+msgstr "आपको किस सेवा की आवश्यकता है?"
+
+msgid "Describe the issue"
+msgstr "समस्या का विवरण दें"
+
+msgid "When do you need the service?"
+msgstr "आपको कब सेवा चाहिए?"
+
+msgid "Emergency — Need help ASAP"
+msgstr "आपातकाल — तुरंत सहायता चाहिए"
+
+msgid "Service Location"
+msgstr "सेवा स्थान"
+
+msgid "Submit Booking Request"
+msgstr "बुकिंग अनुरोध सबमिट करें"
+
+msgid "Booking"
+msgstr "बुकिंग"
+
+msgid "Pending"
+msgstr "लंबित"
+
+msgid "Matched"
+msgstr "मैच हो गया"
+
+msgid "Accepted"
+msgstr "स्वीकार किया"
+
+msgid "In Progress"
+msgstr "प्रगति में"
+
+msgid "Completed"
+msgstr "पूर्ण"
+
+msgid "Cancelled by Customer"
+msgstr "ग्राहक द्वारा रद्द"
+
+msgid "Cancelled by Worker"
+msgstr "श्रमिक द्वारा रद्द"
+
+msgid "Disputed"
+msgstr "विवादित"
+
+msgid "Scheduled"
+msgstr "निर्धारित"
+
+msgid "Location"
+msgstr "स्थान"
+
+msgid "Description"
+msgstr "विवरण"
+
+msgid "Estimated Price"
+msgstr "अनुमानित मूल्य"
+
+msgid "Cancel Booking"
+msgstr "बुकिंग रद्द करें"
+
+msgid "Accept Job"
+msgstr "कार्य स्वीकार करें"
+
+msgid "Reject"
+msgstr "अस्वीकार"
+
+msgid "Start Job"
+msgstr "कार्य शुरू करें"
+
+msgid "Mark Complete"
+msgstr "पूर्ण चिन्हित करें"
+
+msgid "Status History"
+msgstr "स्थिति इतिहास"
+
+# ── Workers ───────────────────────────────────────────────────────
+
+msgid "All Categories"
+msgstr "सभी श्रेणियाँ"
+
+msgid "All Availability"
+msgstr "सभी उपलब्धता"
+
+msgid "Available Now"
+msgstr "अभी उपलब्ध"
+
+msgid "Filter"
+msgstr "फ़िल्टर"
+
+msgid "years exp"
+msgstr "वर्ष अनुभव"
+
+msgid "Available"
+msgstr "उपलब्ध"
+
+msgid "Busy"
+msgstr "व्यस्त"
+
+msgid "Offline"
+msgstr "ऑफ़लाइन"
+
+msgid "jobs completed"
+msgstr "कार्य पूर्ण"
+
+msgid "View Profile"
+msgstr "प्रोफ़ाइल देखें"
+
+msgid "Verified"
+msgstr "सत्यापित"
+
+msgid "About"
+msgstr "के बारे में"
+
+msgid "Skills"
+msgstr "कौशल"
+
+msgid "Certifications"
+msgstr "प्रमाणपत्र"
+
+msgid "Rating"
+msgstr "रेटिंग"
+
+msgid "Jobs Done"
+msgstr "कार्य पूर्ण"
+
+msgid "Reviews"
+msgstr "समीक्षाएँ"
+
+msgid "Recent Reviews"
+msgstr "हाल की समीक्षाएँ"
+
+# ── Payments ──────────────────────────────────────────────────────
+
+msgid "Payment Successful!"
+msgstr "भुगतान सफल!"
+
+msgid "Thank you for your payment. Your worker will be paid shortly."
+msgstr "आपके भुगतान के लिए धन्यवाद। आपके श्रमिक को जल्द ही भुगतान किया जाएगा।"
+
+msgid "Pay Now"
+msgstr "अभी भुगतान करें"
+
+msgid "Payment Failed"
+msgstr "भुगतान विफल"
+
+msgid "Order Summary"
+msgstr "ऑर्डर समरी"
+
+msgid "Total to Pay"
+msgstr "कुल भुगतान"
+
+msgid "Invoice"
+msgstr "चालान"
+
+# ── Profile ───────────────────────────────────────────────────────
+
+msgid "My Profile"
+msgstr "मेरी प्रोफ़ाइल"
+
+msgid "Edit"
+msgstr "संपादित करें"
+
+msgid "Phone Verified"
+msgstr "फ़ोन सत्यापित"
+
+msgid "Phone Not Verified"
+msgstr "फ़ोन सत्यापित नहीं"
+
+msgid "Member Since"
+msgstr "सदस्य तब से"
+
+msgid "Language"
+msgstr "भाषा"
+
+msgid "Edit Profile"
+msgstr "प्रोफ़ाइल संपादित करें"
+
+msgid "Change Password"
+msgstr "पासवर्ड बदलें"
+
+# ── Worker Onboarding ─────────────────────────────────────────────
+
+msgid "Complete Your Profile"
+msgstr "अपनी प्रोफ़ाइल पूरी करें"
+
+msgid "Step"
+msgstr "चरण"
+
+msgid "of"
+msgstr "में से"
+
+msgid "Basic Details"
+msgstr "मूल विवरण"
+
+msgid "Next Step"
+msgstr "अगला चरण"
+
+msgid "Back"
+msgstr "वापस"
+
+msgid "Submit Profile"
+msgstr "प्रोफ़ाइल सबमिट करें"
+
+# ── Admin ─────────────────────────────────────────────────────────
+
+msgid "Cooperative Admin Dashboard"
+msgstr "सहकारी प्रशासन डैशबोर्ड"
+
+msgid "Total Workers"
+msgstr "कुल श्रमिक"
+
+msgid "Active Bookings"
+msgstr "सक्रिय बुकिंग"
+
+msgid "Revenue (This Month)"
+msgstr "राजस्व (इस माह)"
+
+msgid "Avg Worker Rating"
+msgstr "औसत श्रमिक रेटिंग"
+
+msgid "Recent Bookings"
+msgstr "हाल की बुकिंग"
+
+msgid "Cooperatives"
+msgstr "सहकार"
+
+msgid "Verify Workers"
+msgstr "श्रमिक सत्यापित करें"
+
+msgid "workers pending verification"
+msgstr "श्रमिक सत्यापन लंबित"
+
+# ── Common ────────────────────────────────────────────────────────
+
+msgid "Save"
+msgstr "सहेजें"
+
+msgid "Cancel"
+msgstr "रद्द करें"
+
+msgid "Delete"
+msgstr "हटाएँ"
+
+msgid "Search"
+msgstr "खोजें"
+
+msgid "Submit"
+msgstr "सबमिट करें"
+
+msgid "Loading..."
+msgstr "लोड हो रहा है..."
+
+msgid "Go Home"
+msgstr "होम जाएँ"
+
+msgid "Page not found"
+msgstr "पृष्ठ नहीं मिला"
+
+msgid "Something went wrong. Please try again later."
+msgstr "कुछ गलत हो गया। कृपया बाद में पुनः प्रयास करें।"
+
+msgid "Back to Dashboard"
+msgstr "डैशबोर्ड पर वापस"
+
+msgid "Demo accounts:"
+msgstr "डेमो खाते:"
+
+msgid "Check the server console for the OTP code"
+msgstr "OTP कोड के लिए सर्वर कंसोल देखें"
+
+msgid "In production, this opens the Razorpay payment gateway"
+msgstr "प्रोडक्शन में, यह Razorpay भुगतान गेटवे खोलता है"
+
+msgid "Powered by"
+msgstr "द्वारा संचालित"
+
+msgid "Gig Saarthi Team"
+msgstr "गिग सारथी टीम"

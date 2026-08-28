@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Rate Worker" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    <div class="mb-6 text-center sm:text-left">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">⭐ {% trans "Rate Your Experience" %}</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">{% trans "Your feedback builds cooperative worker reputations and maintains service quality" %}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8 space-y-6">
+        {% csrf_token %}
+
+        <div class="p-4 bg-surface-50 rounded-xl border border-slate-100 flex items-center space-x-3.5">
+            <span class="text-3xl p-2 bg-white rounded-xl border border-slate-100 shadow-xs">{{ booking.service_category.icon }}</span>
+            <div>
+                <p class="text-xs text-slate-500">{% trans "Service Performed:" %}</p>
+                <p class="font-extrabold text-xs sm:text-sm text-slate-900">
+                    {{ booking.service_category.name }}
+                    <span class="font-normal text-slate-500">by</span>
+                    <strong class="text-primary-700">{% if booking.worker %}{{ booking.worker.get_full_name|default:booking.worker.username }}{% else %}—{% endif %}</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Overall Rating Star Component -->
+        <div class="p-4 bg-amber-50/60 border border-amber-100 rounded-xl" x-data="{ rating: 5 }">
+            <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider">{% trans "Overall Rating" %} *</label>
+                <span class="text-xs font-black text-amber-600 font-mono" x-text="rating + ' / 5'">5 / 5</span>
+            </div>
+            <div class="flex space-x-2">
+                {% for i in "12345" %}
+                <button type="button" @click="rating = {{ i }}; $refs.overallRating.value = {{ i }}"
+                    class="text-3xl transition-transform hover:scale-110 focus:outline-none"
+                    :class="rating >= {{ i }} ? 'text-amber-400' : 'text-slate-200'">★</button>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="overall_rating" x-ref="overallRating" value="5" required>
+        </div>
+
+        <!-- Breakdown Multi-Criteria -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Punctuality -->
+            <div class="p-3.5 bg-surface-50 border border-slate-100 rounded-xl" x-data="{ rating: 5 }">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Punctuality" %}</label>
+                <div class="flex space-x-1.5">
+                    {% for i in "12345" %}
+                    <button type="button" @click="rating = {{ i }}; $refs.punctualityRating.value = {{ i }}"
+                        class="text-xl transition-transform hover:scale-110 focus:outline-none"
+                        :class="rating >= {{ i }} ? 'text-amber-400' : 'text-slate-200'">★</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="punctuality_rating" x-ref="punctualityRating" value="5">
+            </div>
+
+            <!-- Quality -->
+            <div class="p-3.5 bg-surface-50 border border-slate-100 rounded-xl" x-data="{ rating: 5 }">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Quality of Work" %}</label>
+                <div class="flex space-x-1.5">
+                    {% for i in "12345" %}
+                    <button type="button" @click="rating = {{ i }}; $refs.qualityRating.value = {{ i }}"
+                        class="text-xl transition-transform hover:scale-110 focus:outline-none"
+                        :class="rating >= {{ i }} ? 'text-amber-400' : 'text-slate-200'">★</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="quality_rating" x-ref="qualityRating" value="5">
+            </div>
+        </div>
+
+        <!-- Feedback Comment -->
+        <div>
+            <label for="comment" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                {% trans "Detailed Review (Optional)" %}
+            </label>
+            <textarea id="comment" name="comment" rows="3"
+                class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-xs text-slate-800 transition placeholder:text-slate-400"
+                placeholder="{% trans 'Describe the quality of work, professional demeanor, or suggestions...' %}"></textarea>
+        </div>
+
+        <button type="submit"
+            class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-sm transition active:scale-[0.99] text-xs">
+            {% trans "Submit Rating & Publish Review" %} →
+        </button>
+    </form>
+</div>
+{% endblock %}
+

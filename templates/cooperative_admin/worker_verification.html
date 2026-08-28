@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Worker Verification" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">🔍 {% trans "Worker KYC Verification" %}</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">{% trans "Review credentials, trade experience, and cooperative membership for pending pros" %}</p>
+        </div>
+        <a href="{% url 'cooperative_admin:dashboard' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors">
+            <span>←</span>
+            <span>{% trans "Back to Dashboard" %}</span>
+        </a>
+    </div>
+
+    <!-- Pending Workers Section -->
+    <div class="mb-10">
+        <div class="flex items-center space-x-2 mb-4">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-100"></span>
+            <h2 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                {% trans "Awaiting Approval" %} ({{ pending_workers|length }})
+            </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for worker in pending_workers %}
+            <div class="bg-white rounded-2xl border border-amber-200 shadow-subtle p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+
+                <div>
+                    <div class="flex items-center space-x-3.5 mb-4">
+                        <div class="w-12 h-12 bg-amber-50 text-amber-800 rounded-2xl border border-amber-200 flex items-center justify-center font-extrabold text-base shadow-xs flex-shrink-0">
+                            {{ worker.user.first_name|first|default:worker.user.username|first|upper }}
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900">{{ worker.user.get_full_name|default:worker.user.username }}</h3>
+                            <p class="text-xs text-slate-500 font-mono">{{ worker.user.phone_number }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 text-xs mb-5 bg-surface-50 p-3.5 rounded-xl border border-slate-100">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">{% trans "Experience" %}:</span>
+                            <span class="font-bold text-slate-800">{{ worker.experience_years }} {% trans "years" %}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">{% trans "Cooperative" %}:</span>
+                            <span class="font-bold text-slate-800">{{ worker.cooperative|default:"—" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">{% trans "Skills" %}:</span>
+                            <span class="font-bold text-slate-800 text-right">
+                                {% for skill in worker.skills.all|slice:":3" %}
+                                    {{ skill.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% if worker.id_proof_type %}
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">{% trans "ID Document" %}:</span>
+                            <span class="font-mono font-bold text-primary-600">{{ worker.id_proof_type }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5 pt-2">
+                    <form method="post" action="{% url 'cooperative_admin:verify_worker' worker_id=worker.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                            ✓ {% trans "Approve KYC" %}
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'cooperative_admin:reject_worker' worker_id=worker.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="reason" value="Verification rejected by admin">
+                        <button type="submit"
+                            class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98]">
+                            ✗ {% trans "Reject" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-8">
+                <p class="text-4xl mb-3">✅</p>
+                <h3 class="text-sm font-bold text-slate-800 mb-1">{% trans "All caught up!" %}</h3>
+                <p class="text-xs text-slate-500">{% trans "There are no pending worker verification applications in the queue." %}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recently Verified Table -->
+    <div>
+        <div class="flex items-center space-x-2 mb-4">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+            <h2 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                {% trans "Recently Verified Saarthis" %}
+            </h2>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle overflow-hidden">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-surface-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+                    <tr>
+                        <th class="px-5 py-3.5">{% trans "Worker Name" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Phone Number" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Cooperative Society" %}</th>
+                        <th class="px-5 py-3.5 text-right">{% trans "KYC Status" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for worker in verified_workers %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="px-5 py-3.5 font-bold text-slate-900">{{ worker.user.get_full_name|default:worker.user.username }}</td>
+                        <td class="px-5 py-3.5 font-mono text-slate-600">{{ worker.user.phone_number }}</td>
+                        <td class="px-5 py-3.5 text-slate-600">{{ worker.cooperative|default:"—" }}</td>
+                        <td class="px-5 py-3.5 text-right">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                ✓ {% trans "Verified" %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "My Profile" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <h1 class="text-2xl font-bold mb-6">👷 {% trans "My Worker Profile" %}</h1>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="flex items-start space-x-4 mb-6">
+            <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center text-3xl font-bold text-primary-600">
+                {{ user.first_name|first|default:"W" }}
+            </div>
+            <div>
+                <h2 class="text-xl font-bold">{{ user.get_full_name|default:user.username }}</h2>
+                <p class="text-gray-500">{{ profile.experience_years }} {% trans "years experience" %}</p>
+                {% if profile.is_verified %}
+                    <span class="text-green-500 text-sm">✓ {% trans "Verified" %}</span>
+                {% else %}
+                    <span class="text-yellow-500 text-sm">⏳ {% trans "Pending Verification" %}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-2xl font-bold text-yellow-500">{{ profile.avg_rating|floatformat:1 }} ★</p>
+                <p class="text-xs text-gray-500">{% trans "Rating" %}</p>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-2xl font-bold text-primary-600">{{ profile.total_jobs_completed }}</p>
+                <p class="text-xs text-gray-500">{% trans "Jobs" %}</p>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-2xl font-bold text-gray-700">{{ profile.total_reviews }}</p>
+                <p class="text-xs text-gray-500">{% trans "Reviews" %}</p>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="font-semibold mb-2">{% trans "Skills" %}</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for skill in profile.skills.all %}
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm">{{ skill.name }}</span>
+                {% empty %}
+                <p class="text-gray-500 text-sm">{% trans "No skills added yet" %}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <a href="{% url 'core:dashboard' %}" class="text-primary-600 hover:text-primary-700 text-sm">← {% trans "Back to Dashboard" %}</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Page Not Found" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+    <div class="text-center">
+        <h1 class="text-6xl font-bold text-gray-300">404</h1>
+        <p class="mt-4 text-xl text-gray-600">{% trans "Page not found" %}</p>
+        <p class="mt-2 text-gray-500">{% trans "The page you're looking for doesn't exist." %}</p>
+        <a href="{% url 'core:home' %}" class="mt-6 inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-medium">
+            {% trans "Go Home" %}
+        </a>
+    </div>
+</div>
+{% endblock %}

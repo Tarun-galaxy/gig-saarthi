@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ worker.user.get_full_name|default:worker.user.username }} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    {% if user.is_coop_admin or user.is_platform_admin %}
+    <a href="{% url 'workers:list' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 mb-5 transition-colors">
+        <span>←</span>
+        <span>{% trans "Back to Directory" %}</span>
+    </a>
+    {% else %}
+    <a href="javascript:history.back()" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 mb-5 transition-colors">
+        <span>←</span>
+        <span>{% trans "Back" %}</span>
+    </a>
+    {% endif %}
+
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8">
+        
+        <!-- Profile Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-5 mb-6 pb-6 border-b border-slate-100">
+            <div class="w-20 h-20 bg-indigo-50 text-indigo-700 rounded-2xl border border-indigo-100 flex items-center justify-center text-3xl font-black shadow-xs flex-shrink-0">
+                {{ worker.user.first_name|first|default:"W"|upper }}
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                        {{ worker.user.get_full_name|default:worker.user.username }}
+                    </h1>
+                    {% if worker.is_verified %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="{% trans 'KYC Verified Worker' %}">
+                        ✓ {% trans "Verified" %}
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">{{ worker.experience_years }} {% trans "years trade experience" %}</p>
+                {% if worker.cooperative %}
+                <p class="text-xs font-bold text-primary-600 mt-1 flex items-center space-x-1">
+                    <span>🏢</span>
+                    <span>{{ worker.cooperative.name }} ({{ worker.cooperative.region }})</span>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
+                <p class="text-xl font-black text-amber-500">{{ worker.avg_rating|floatformat:1 }} ⭐</p>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Overall Rating" %}</p>
+            </div>
+            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
+                <p class="text-xl font-black text-primary-600">{{ worker.total_jobs_completed }}</p>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Jobs Completed" %}</p>
+            </div>
+            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
+                <p class="text-xl font-black text-slate-800">{{ worker.total_reviews }}</p>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Reviews" %}</p>
+            </div>
+        </div>
+
+        <!-- Bio -->
+        {% if worker.bio %}
+        <div class="mb-6">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{% trans "Saarthi Bio" %}</h3>
+            <p class="text-xs text-slate-700 bg-surface-50 p-4 rounded-xl border border-slate-100 leading-relaxed">{{ worker.bio }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Skills -->
+        <div class="mb-6">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">{% trans "Trade Competencies" %}</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for skill in worker.skills.all %}
+                <span class="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold">{{ skill.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Certifications -->
+        {% if certifications %}
+        <div class="mb-6">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">{% trans "Verified Certifications" %}</h3>
+            <div class="space-y-2">
+                {% for cert in certifications %}
+                <div class="flex items-center justify-between p-3.5 bg-surface-50 rounded-xl border border-slate-100 text-xs">
+                    <div>
+                        <p class="font-bold text-slate-900">{{ cert.certificate_name }}</p>
+                        <p class="text-[11px] text-slate-500">{{ cert.skill.name }} — {{ cert.issued_by|default:"Certified Agency" }}</p>
+                    </div>
+                    {% if cert.is_verified %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ {% trans "Verified" %}</span>
+                    {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⏳ {% trans "Pending" %}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Availability Strip -->
+        <div class="mb-6 flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="text-xs font-bold text-slate-700">{% trans "Current Status" %}</span>
+            <span class="px-3 py-1 rounded-full text-xs font-bold border
+                {% if worker.availability_status == 'available' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                {% elif worker.availability_status == 'busy' %}bg-amber-50 text-amber-700 border-amber-200
+                {% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
+                {% if worker.availability_status == 'available' %}● {% trans "Available Now" %}
+                {% elif worker.availability_status == 'busy' %}⏳ {% trans "Busy on Site" %}
+                {% else %}{% trans "Offline" %}{% endif %}
+            </span>
+        </div>
+
+        <!-- Book Action Button -->
+        {% if worker.availability_status == 'available' and user.is_customer %}
+        <a href="{% url 'bookings:create' %}"
+            class="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl shadow-sm transition active:scale-[0.99] text-xs">
+            {% trans "Book Service with This Worker" %} →
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Reviews Section -->
+    {% if reviews %}
+    <div class="mt-6 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">{% trans "Customer Reviews & Feedback" %}</h2>
+        <div class="space-y-3.5">
+            {% for review in reviews %}
+            <div class="p-3.5 bg-surface-50 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="font-bold text-xs text-slate-900">{{ review.customer.get_full_name|default:review.customer.username }}</span>
+                    <span class="text-amber-500 font-bold text-xs">{{ review.overall_rating }} ★</span>
+                </div>
+                {% if review.comment %}
+                <p class="text-xs text-slate-700 leading-relaxed">{{ review.comment }}</p>
+                {% endif %}
+                <p class="text-[10px] text-slate-400 font-mono mt-1">{{ review.created_at|date:"d M Y" }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

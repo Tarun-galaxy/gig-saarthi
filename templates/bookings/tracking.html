@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Track" %} {{ booking.service_category.name }} — Gig Saarthi{% endblock %}
+
+{% block extra_css %}
+<style>
+    #mobile-bottom-nav { display: none !important; }
+
+    /* Status card transitions */
+    #status-card {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        touch-action: none;
+    }
+    #status-card.dragging {
+        transition: none !important;
+    }
+
+    /* Expanded section */
+    #expanded-section {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.25s ease,
+                    padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        opacity: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    #expanded-section.open {
+        max-height: 400px;
+        opacity: 1;
+        padding-top: 16px;
+        padding-bottom: 4px;
+    }
+
+    /* Drag handle animation */
+    #drag-handle {
+        transition: transform 0.2s ease;
+    }
+    #drag-handle.expanded {
+        transform: rotate(180deg);
+    }
+
+    /* Cancel modal overlay */
+    #cancel-overlay {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    #cancel-overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    #cancel-modal {
+        transform: translateY(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #cancel-overlay.visible #cancel-modal {
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Full-screen map -->
+<div class="relative w-full overflow-hidden" style="height: calc(100vh - 60px);">
+    <div id="tracking-map" class="w-full h-full"></div>
+
+    <!-- Floating Map Controls (Zoom, Re-center, Fit Route) -->
+    <div class="absolute top-4 right-4 z-[1000] flex flex-col space-y-2">
+        <button type="button" id="tracking-recenter" title="Re-center on Worker"
+            class="w-10 h-10 bg-white/95 backdrop-blur-md hover:bg-white text-slate-800 rounded-xl shadow-floating flex items-center justify-center text-base border border-slate-200 font-bold active:scale-90 transition-all">
+            🎯
+        </button>
+        <button type="button" id="tracking-fit" title="Fit Full Route"
+            class="w-10 h-10 bg-white/95 backdrop-blur-md hover:bg-white text-slate-800 rounded-xl shadow-floating flex items-center justify-center text-sm border border-slate-200 font-bold active:scale-90 transition-all">
+            🗺️
+        </button>
+        <button type="button" id="tracking-zoomin" title="Zoom In"
+            class="w-10 h-10 bg-white/95 backdrop-blur-md hover:bg-white text-slate-800 rounded-xl shadow-floating flex items-center justify-center text-lg border border-slate-200 font-bold active:scale-90 transition-all">
+            +
+        </button>
+        <button type="button" id="tracking-zoomout" title="Zoom Out"
+            class="w-10 h-10 bg-white/95 backdrop-blur-md hover:bg-white text-slate-800 rounded-xl shadow-floating flex items-center justify-center text-lg border border-slate-200 font-bold active:scale-90 transition-all">
+            −
+        </button>
+    </div>
+</div>
+
+<!-- ─── Bottom Status Card ─── -->
+<div id="status-card" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl px-5 pt-5 pb-6 max-w-lg mx-auto"
+     style="max-width: 480px; z-index: 9999;">
+
+    <!-- Drag handle -->
+    <div id="drag-handle" class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4" style="cursor: pointer;"></div>
+
+    <!-- Worker info row -->
+    <div class="flex items-center space-x-3 mb-4">
+        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-xl ring-2 ring-green-400 animate-pulse">
+            👷
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-gray-900" id="worker-name">{{ booking.worker.get_full_name|default:"Finding worker..." }}</p>
+            <p class="text-sm text-gray-500">{{ booking.service_category.name }} · #{{ booking.pk }}</p>
+        </div>
+        <div class="text-right">
+            <p class="text-xs text-gray-400 uppercase tracking-wide">{% trans "ETA" %}</p>
+            <p class="text-2xl font-bold text-primary-600" id="eta-value">~{{ route_info.duration_min|floatformat:0|default:"--" }}</p>
+            <p class="text-[10px] text-gray-400">{% trans "minutes" %}</p>
+        </div>
+    </div>
+
+    <!-- Distance bar -->
+    <div class="bg-primary-50 rounded-2xl p-4 mb-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <span class="text-primary-500">📍</span>
+                <div>
+                    <p class="text-sm font-medium text-primary-700" id="distance-value">{{ route_info.distance_km|default:"--" }} km</p>
+                    <p class="text-[10px] text-primary-500">{% trans "away from you" %}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-primary-500">🏠</span>
+                <div class="text-right">
+                    <p class="text-sm font-medium text-primary-700">{{ booking.address_text|truncatechars:30 }}</p>
+                    <p class="text-[10px] text-primary-500">{% trans "your location" %}</p>
+                </div>
+            </div>
+        </div>
+        <!-- Progress bar -->
+        <div class="mt-3 h-1.5 bg-primary-200 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-primary-500 rounded-full transition-all duration-1000" style="width: 0%;"></div>
+        </div>
+    </div>
+
+    <!-- Status badge + Call -->
+    <div class="flex items-center justify-between">
+        <div id="status-badge" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+            {% if booking.status == 'accepted' %}bg-indigo-100 text-indigo-700
+            {% elif booking.status == 'in_progress' %}bg-green-100 text-green-700
+            {% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            <span class="w-2 h-2 rounded-full animate-pulse
+                {% if booking.status == 'accepted' %}bg-indigo-500
+                {% elif booking.status == 'in_progress' %}bg-green-500
+                {% else %}bg-yellow-500{% endif %}"></span>
+            <span id="status-text">{% if booking.status == 'accepted' %}{% trans "Worker is on the way" %}{% elif booking.status == 'in_progress' %}{% trans "Job in progress" %}{% else %}{% trans "Waiting for worker" %}{% endif %}</span>
+        </div>
+        <a href="tel:{{ booking.worker.phone_number|default:'' }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium transition">
+            📞 {% trans "Call" %}
+        </a>
+    </div>
+
+    <!-- ─── Expanded Section (hidden by default) ─── -->
+    <div id="expanded-section">
+        <div class="border-t border-gray-100 pt-4">
+            <!-- Worker details -->
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">{% trans "Worker Details" %}</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">{% trans "Phone" %}</span>
+                    <a href="tel:{{ booking.worker.phone_number|default:'' }}" class="text-sm font-medium text-primary-600">{{ booking.worker.phone_number|default:"N/A" }}</a>
+                </div>
+                {% if booking.worker.worker_profile %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">{% trans "Rating" %}</span>
+                    <span class="text-sm font-medium text-yellow-600">⭐ {{ booking.worker.worker_profile.avg_rating|floatformat:1|default:"N/A" }}</span>
+                </div>
+                {% endif %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">{% trans "Booking" %}</span>
+                    <span class="text-sm font-medium text-gray-700">#{{ booking.pk }} — {{ booking.service_category.name }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">{% trans "Address" %}</span>
+                    <span class="text-sm font-medium text-gray-700 text-right max-w-[60%]">{{ booking.address_text|truncatechars:40 }}</span>
+                </div>
+            </div>
+
+            {% if booking.can_be_cancelled and user == booking.customer %}
+            <!-- Cancel button -->
+            <button id="cancel-btn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-3 rounded-xl text-sm font-semibold transition">
+                ✕ {% trans "Cancel Booking" %}
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Swipe hint -->
+    <p id="swipe-hint" class="text-center text-[10px] text-gray-300 mt-2 select-none">{% trans "Swipe up for details" %}</p>
+</div>
+
+<!-- ─── Cancel Confirmation Modal ─── -->
+<div id="cancel-overlay" class="fixed inset-0 bg-black/40 flex items-end justify-center z-[10000]">
+    <div id="cancel-modal" class="bg-white rounded-t-3xl w-full max-w-lg p-6 pb-8">
+        <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-5"></div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">{% trans "Cancel Booking?" %}</h3>
+        <p class="text-sm text-gray-500 mb-4">{% trans "Are you sure you want to cancel booking" %} #{{ booking.pk }}? {% trans "This action cannot be undone." %}</p>
+
+        <form method="post" action="{% url 'bookings:cancel' pk=booking.pk %}">
+            {% csrf_token %}
+            <div class="mb-5">
+                <label for="cancel-reason" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Reason (optional)" %}</label>
+                <textarea id="cancel-reason" name="reason" rows="2"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                    placeholder="{% trans 'Why are you cancelling?' %}"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" id="cancel-go-back" class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm font-semibold transition">
+                    {% trans "Go Back" %}
+                </button>
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-sm font-semibold transition">
+                    {% trans "Confirm Cancel" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── Config ───
+var customerLat = {{ customer_lat|default:"28.6139" }};
+var customerLng = {{ customer_lng|default:"77.2090" }};
+var workerLat = {{ worker_lat|default:"28.6139" }};
+var workerLng = {{ worker_lng|default:"77.2090" }};
+var bookingId = {{ booking.pk }};
+var bookingStatus = '{{ booking.status }}';
+var maxEta = {{ route_info.duration_min|default:"30"|floatformat:0 }};  // for progress bar scaling
+
+// ─── Map (Dark Theme) ───
+var map = L.map('tracking-map', {
+    zoomControl: false,
+    attributionControl: false,
+    scrollWheelZoom: true,
+    touchZoom: true,
+    doubleClickZoom: true,
+    dragging: true
+}).setView([workerLat, workerLng], 14);
+
+L.tileLayer('https://maps.geoapify.com/v1/tile/dark-matter/{z}/{x}/{y}.png?apiKey={{ geoapify_key|default:"37636925f80b4e0494861b4e9f0a0101" }}', {
+    maxZoom: 19
+}).addTo(map);
+
+// Worker marker (blue pulsing)
+var workerIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:40px;height:40px;background:#3b82f6;border:4px solid #fff;border-radius:50%;box-shadow:0 4px 15px rgba(59,130,246,0.5);display:flex;align-items:center;justify-content:center;font-size:20px;animation:workerPulse 2s infinite;">🛵</div>',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+var workerMarker = L.marker([workerLat, workerLng], {icon: workerIcon}).addTo(map)
+    .bindPopup('<b>' + (document.getElementById('worker-name').textContent || 'Worker') + '</b><br>On the way to you');
+
+// Customer marker (red pin)
+var customerIcon = L.divIcon({
+    className: '',
+    html: '<div style="width:36px;height:36px;background:#ef4444;border:4px solid #fff;border-radius:50%;box-shadow:0 4px 15px rgba(239,68,68,0.5);display:flex;align-items:center;justify-content:center;font-size:18px;">🏠</div>',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+});
+L.marker([customerLat, customerLng], {icon: customerIcon}).addTo(map)
+    .bindPopup('<b>Your location</b><br>{{ booking.address_text|escapejs }}');
+
+// Wire floating control buttons
+document.getElementById('tracking-recenter').addEventListener('click', function() {
+    map.flyTo(workerMarker.getLatLng(), 16, { animate: true });
+});
+document.getElementById('tracking-fit').addEventListener('click', function() {
+    if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [80, 80, 200, 80], animate: true });
+});
+document.getElementById('tracking-zoomin').addEventListener('click', function() { map.zoomIn(); });
+document.getElementById('tracking-zoomout').addEventListener('click', function() { map.zoomOut(); });
+
+
+// Helper to dynamically slice route so the polyline shrinks as the Saarthi progresses
+function sliceRouteFromPosition(currentLatLng, fullCoords) {
+    if (!fullCoords || fullCoords.length <= 1) {
+        return [currentLatLng];
+    }
+    var curLat = currentLatLng[0] !== undefined ? currentLatLng[0] : currentLatLng.lat;
+    var curLng = currentLatLng[1] !== undefined ? currentLatLng[1] : currentLatLng.lng;
+    
+    var minDistanceSq = Infinity;
+    var closestIdx = 0;
+    
+    for (var i = 0; i < fullCoords.length; i++) {
+        var pt = fullCoords[i];
+        var ptLat = pt[0] !== undefined ? pt[0] : pt.lat;
+        var ptLng = pt[1] !== undefined ? pt[1] : pt.lng;
+        var dLat = ptLat - curLat;
+        var dLng = ptLng - curLng;
+        var distSq = dLat * dLat + dLng * dLng;
+        if (distSq < minDistanceSq) {
+            minDistanceSq = distSq;
+            closestIdx = i;
+        }
+    }
+    
+    var remaining = [[curLat, curLng]];
+    for (var j = closestIdx + 1; j < fullCoords.length; j++) {
+        var p = fullCoords[j];
+        remaining.push([p[0] !== undefined ? p[0] : p.lat, p[1] !== undefined ? p[1] : p.lng]);
+    }
+    
+    if (remaining.length === 1 && fullCoords.length > 0) {
+        var lastPt = fullCoords[fullCoords.length - 1];
+        remaining.push([lastPt[0] !== undefined ? lastPt[0] : lastPt.lat, lastPt[1] !== undefined ? lastPt[1] : lastPt.lng]);
+    }
+    
+    return remaining;
+}
+
+// Route polyline{% if route_info and route_info.polyline %}
+var fullRouteCoords = {{ route_info.polyline|safe }};
+window.fullRouteCoords = fullRouteCoords;
+var initialRemainingRoute = sliceRouteFromPosition([workerLat, workerLng], fullRouteCoords);
+var routeLine = L.polyline(initialRemainingRoute, {
+    color: '#4f46e5',
+    weight: 5,
+    opacity: 0.9,
+    lineJoin: 'round',
+    lineCap: 'round',
+    smoothFactor: 1
+}).addTo(map);
+map.fitBounds(L.polyline(fullRouteCoords).getBounds(), {padding: [80, 80, 200, 80]});{% else %}
+// Fallback: dashed line
+window.fullRouteCoords = [[workerLat, workerLng], [customerLat, customerLng]];
+var routeLine = L.polyline([[workerLat, workerLng], [customerLat, customerLng]], {
+    color: '#4f46e5',
+    weight: 4,
+    dashArray: '8, 8',
+    opacity: 0.8
+}).addTo(map);
+map.fitBounds([[workerLat, workerLng], [customerLat, customerLng]], {padding: [80, 80, 200, 80]});{% endif %}
+
+// Initial progress (based on ETA remaining)
+var progress = Math.max(5, Math.min(95, 100 - ({{ route_info.duration_min|default:"30"|floatformat:0 }} / maxEta * 100)));
+document.getElementById('progress-bar').style.width = progress + '%';
+
+// ─── Swipe-to-expand card ───
+(function() {
+    var card = document.getElementById('status-card');
+    var expandedSection = document.getElementById('expanded-section');
+    var handle = document.getElementById('drag-handle');
+    var hint = document.getElementById('swipe-hint');
+    var isExpanded = false;
+    var startY = 0;
+    var currentY = 0;
+    var isDragging = false;
+    var startTranslate = 0;
+
+    function haptic(pattern) {
+        if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function setExpanded(expand) {
+        isExpanded = expand;
+        if (expand) {
+            expandedSection.classList.add('open');
+            handle.classList.add('expanded');
+            hint.textContent = '{% trans "Swipe down to collapse" %}';
+            hint.style.display = 'block';
+            haptic(25);  // single short pulse on expand
+        } else {
+            expandedSection.classList.remove('open');
+            handle.classList.remove('expanded');
+            hint.textContent = '{% trans "Swipe up for details" %}';
+            hint.style.display = 'block';
+            haptic([15, 40, 15]);  // double tap on collapse
+        }
+        card.style.transform = '';
+        card.classList.remove('dragging');
+    }
+
+    // Touch events on the card
+    card.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        card.classList.add('dragging');
+    }, {passive: true});
+
+    card.addEventListener('touchmove', function(e) {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        var diff = startY - currentY; // positive = swipe up
+
+        if (!isExpanded && diff > 0) {
+            // Swiping up — preview expand
+            var translateY = Math.min(diff * 0.5, 60);
+            card.style.transform = 'translateY(-' + translateY + 'px)';
+        } else if (isExpanded && diff < 0) {
+            // Swiping down — preview collapse
+            var translateY = Math.min(Math.abs(diff) * 0.5, 60);
+            card.style.transform = 'translateY(' + translateY + 'px)';
+        }
+    }, {passive: true});
+
+    card.addEventListener('touchend', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        var diff = startY - currentY;
+
+        if (!isExpanded && diff > 40) {
+            setExpanded(true);
+        } else if (isExpanded && diff < -40) {
+            setExpanded(false);
+        } else {
+            card.style.transform = '';
+            card.classList.remove('dragging');
+        }
+    }, {passive: true});
+
+    // Click on handle to toggle
+    handle.addEventListener('click', function() {
+        setExpanded(!isExpanded);
+    });
+})();
+
+// ─── Cancel modal ───
+(function() {
+    var cancelBtn = document.getElementById('cancel-btn');
+    var overlay = document.getElementById('cancel-overlay');
+    var goBack = document.getElementById('cancel-go-back');
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            overlay.classList.add('visible');
+        });
+    }
+
+    goBack.addEventListener('click', function() {
+        overlay.classList.remove('visible');
+    });
+
+    // Close on overlay background click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.classList.remove('visible');
+        }
+    });
+})();
+
+// ─── Polling: refresh worker location every 7s ───
+var pollInterval = setInterval(function() {
+    if (bookingStatus === 'completed' || bookingStatus === 'cancelled_by_customer' || bookingStatus === 'cancelled_by_worker') {
+        clearInterval(pollInterval);
+        return;
+    }
+
+    fetch('/bookings/' + bookingId + '/worker-location/')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) return;
+
+            // Update worker marker position & dynamically shrink route line ahead of Saarthi
+            if (data.worker_lat && data.worker_lng) {
+                var newRiderPos = [data.worker_lat, data.worker_lng];
+                workerMarker.setLatLng(newRiderPos);
+
+                if (data.polyline && data.polyline.length > 0) {
+                    window.fullRouteCoords = data.polyline;
+                }
+
+                if (window.fullRouteCoords && window.fullRouteCoords.length > 0 && routeLine) {
+                    var remainingPath = sliceRouteFromPosition(newRiderPos, window.fullRouteCoords);
+                    routeLine.setLatLngs(remainingPath);
+                }
+            }
+
+            // Update progress bar
+            if (data.eta_min !== undefined && data.eta_min > 0) {
+                var pct = Math.max(5, Math.min(95, 100 - (data.eta_min / maxEta * 100)));
+                document.getElementById('progress-bar').style.width = pct + '%';
+            } else if (data.eta_min !== undefined && data.eta_min <= 0) {
+                document.getElementById('progress-bar').style.width = '100%';
+                document.getElementById('status-text').textContent = 'Worker has arrived!';
+            }
+
+            // Update status
+            if (data.status) {
+                bookingStatus = data.status;
+                var badge = document.getElementById('status-badge');
+                var text = document.getElementById('status-text');
+                if (data.status === 'in_progress') {
+                    text.textContent = 'Job in progress';
+                    badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700';
+                } else if (data.status === 'completed') {
+                    text.textContent = 'Job completed!';
+                    badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700';
+                    clearInterval(pollInterval);
+                    setTimeout(function() { window.location.reload(); }, 2000);
+                }
+            }
+        })
+        .catch(function() {});
+}, 7000);
+
+// Fit map to show both markers on load
+setTimeout(function() { map.invalidateSize(); }, 300);
+</script>
+
+<style>
+@keyframes workerPulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(59,130,246,0.5); }
+    50% { box-shadow: 0 4px 25px rgba(59,130,246,0.8); }
+}
+</style>
+{% endblock %}

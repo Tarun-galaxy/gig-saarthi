@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Customer Dashboard" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    
+    <!-- Quick Navigation Hub -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <a href="{% url 'bookings:create' %}" class="group bg-gradient-to-br from-primary-600 to-indigo-700 dark:from-primary-700 dark:to-indigo-900 text-white rounded-2xl p-6 shadow-subtle hover:shadow-card transition-all relative overflow-hidden flex flex-col items-start">
+            <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
+            </div>
+            <p class="font-bold text-base text-white">{% trans "Book a Service" %}</p>
+            <p class="text-xs text-primary-100 dark:text-indigo-200 mt-1">{% trans "Smart geo-match in 60s" %}</p>
+        </a>
+
+        <a href="{% url 'bookings:list' %}" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col items-start">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <i data-lucide="calendar-check-2" class="w-6 h-6"></i>
+            </div>
+            <p class="font-bold text-base text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{% trans "My Bookings" %}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{% trans "Track active & past jobs" %}</p>
+        </a>
+
+        <a href="{% url 'bookings:create' %}" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col items-start">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <p class="font-bold text-base text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{% trans "Explore Services" %}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{% trans "Browse trade catalog" %}</p>
+        </a>
+
+        <a href="{% url 'payments:list' %}" class="group bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col items-start">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <i data-lucide="receipt" class="w-6 h-6"></i>
+            </div>
+            <p class="font-bold text-base text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{% trans "Payments & Invoices" %}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{% trans "Secure Razorpay receipts" %}</p>
+        </a>
+    </div>
+
+    <!-- Most Booked Services Quick Access -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle mb-10">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">{% trans "Most Booked Services" %}</h2>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        ⭐ {% trans "Popular" %}
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{% trans "Quickly book commonly requested repairs and household maintenance services" %}</p>
+            </div>
+            <a href="{% url 'bookings:create' %}" class="hidden sm:inline-flex items-center space-x-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700">
+                <span>{% trans "Custom Request" %}</span>
+                <span>→</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for item in popular_services %}
+            <a href="{% url 'bookings:create' %}{% if item.category %}?category={{ item.category.id }}&service={{ item.name|urlencode }}&desc={{ item.default_desc|urlencode }}{% endif %}"
+               class="group relative bg-surface-50 dark:bg-slate-950/60 hover:bg-white dark:hover:bg-slate-900 border border-slate-200/70 dark:border-slate-800 hover:border-primary-300 dark:hover:border-primary-600 rounded-2xl p-5 shadow-2xs hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between">
+                
+                <div>
+                    <!-- Top Icon & Tag -->
+                    <div class="flex items-center justify-between mb-3.5">
+                        <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-950/70 text-2xl flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
+                            <span>{{ item.icon }}</span>
+                        </div>
+                        <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                            {{ item.tag }}
+                        </span>
+                    </div>
+
+                    <!-- Title & Description -->
+                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-snug">
+                        {{ item.name }}
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {{ item.desc }}
+                    </p>
+                </div>
+
+                <!-- Price & Action Footer -->
+                <div class="mt-4 pt-3.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between">
+                    <div>
+                        <span class="block text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">From</span>
+                        <span class="text-sm font-black text-slate-900 dark:text-white">₹{{ item.price|floatformat:0 }}</span>
+                    </div>
+                    <span class="inline-flex items-center space-x-1 text-xs font-extrabold text-primary-600 dark:text-primary-400 group-hover:translate-x-0.5 transition-transform">
+                        <span>Book</span>
+                        <span>→</span>
+                    </span>
+                </div>
+            </a>
+            {% empty %}
+            <p class="text-xs text-slate-500 dark:text-slate-400 col-span-full text-center py-4">{% trans "No services available at the moment." %}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

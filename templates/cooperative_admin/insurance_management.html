@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Insurance & Safety Pool" %} — Gig Saarthi Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle">
+        <div>
+            <div class="flex items-center space-x-2">
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    🛡️ {% trans "Insurance & Worker Safety Pool" %}
+                </h1>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    {% trans "Cooperative Welfare" %}
+                </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                {% trans "Manage worker safety insurance policies funded by the 5% cooperative platform fee" %}
+            </p>
+        </div>
+        <a href="{% url 'cooperative_admin:dashboard' %}"
+            class="inline-flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition">
+            <span>←</span>
+            <span>{% trans "Back to Dashboard" %}</span>
+        </a>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Safety Pool Financial Summary (from 5% Cooperative Fees)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 mb-8">
+        <h2 class="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center space-x-2">
+            <span>💰</span>
+            <span>{% trans "Cooperative Safety Pool — Funded by 5% Platform Fee" %}</span>
+        </h2>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/60 dark:from-indigo-950/50 dark:to-indigo-900/30 border border-indigo-200 dark:border-indigo-800">
+                <p class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{% trans "Total Collected" %}</p>
+                <p class="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">₹{{ safety_pool.total_collected|floatformat:0 }}</p>
+                <p class="text-[11px] text-indigo-500 mt-0.5">{% trans "from all completed bookings" %}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-950/50 dark:to-blue-900/30 border border-blue-200 dark:border-blue-800">
+                <p class="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{% trans "Insurance Pool (60%)" %}</p>
+                <p class="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">₹{{ safety_pool.insurance_pool|floatformat:0 }}</p>
+                <p class="text-[11px] text-blue-500 mt-0.5">{% trans "premium coverage funding" %}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/50 dark:to-emerald-900/30 border border-emerald-200 dark:border-emerald-800">
+                <p class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{% trans "Emergency Fund (25%)" %}</p>
+                <p class="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">₹{{ safety_pool.emergency_fund|floatformat:0 }}</p>
+                <p class="text-[11px] text-emerald-500 mt-0.5">{% trans "on-duty medical emergencies" %}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/60 dark:from-amber-950/50 dark:to-amber-900/30 border border-amber-200 dark:border-amber-800">
+                <p class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">{% trans "Reserve (15%)" %}</p>
+                <p class="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">₹{{ safety_pool.reserve|floatformat:0 }}</p>
+                <p class="text-[11px] text-amber-500 mt-0.5">{% trans "contingency buffer" %}</p>
+            </div>
+        </div>
+
+        <!-- Welfare Allocation Visual Bar -->
+        <div class="h-3 rounded-full overflow-hidden flex bg-slate-100 dark:bg-slate-800">
+            <div class="bg-blue-500 transition-all" style="width: 60%;" title="Insurance Pool 60%"></div>
+            <div class="bg-emerald-500 transition-all" style="width: 25%;" title="Emergency Fund 25%"></div>
+            <div class="bg-amber-500 transition-all" style="width: 15%;" title="Reserve 15%"></div>
+        </div>
+        <div class="flex justify-between mt-1.5 text-[10px] font-bold text-slate-400">
+            <span>🔵 {% trans "Insurance 60%" %}</span>
+            <span>🟢 {% trans "Emergency 25%" %}</span>
+            <span>🟡 {% trans "Reserve 15%" %}</span>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Stats Row
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Active Policies" %}</p>
+            <p class="text-2xl font-black text-emerald-600 mt-1">{{ total_active }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Pending Activation" %}</p>
+            <p class="text-2xl font-black text-amber-600 mt-1">{{ total_pending }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Expired" %}</p>
+            <p class="text-2xl font-black text-rose-600 mt-1">{{ total_expired }}</p>
+        </div>
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Uninsured Workers" %}</p>
+            <p class="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{{ total_uninsured }}</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Uninsured Workers — Quick Enrollment
+         ═══════════════════════════════════════════════════════════ -->
+    {% if workers_without_insurance %}
+    <div class="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 mb-8 shadow-xs">
+        <h3 class="font-bold text-sm text-amber-900 dark:text-amber-200 mb-3 flex items-center space-x-2">
+            <span>⚠️</span>
+            <span>{% trans "Verified Workers Without Active Insurance" %} ({{ total_uninsured }})</span>
+        </h3>
+        <p class="text-xs text-amber-700 dark:text-amber-400 mb-4">
+            {% trans "These verified workers are currently not covered. Enroll them in the cooperative safety insurance funded by the 5% platform fee." %}
+        </p>
+        <div class="space-y-2.5">
+            {% for wp in workers_without_insurance %}
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-base font-black border border-indigo-100 dark:border-indigo-800">
+                        {{ wp.user.first_name|first|default:wp.user.username|first|upper }}
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-900 dark:text-white">{{ wp.user.get_full_name|default:wp.user.username }}</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                            📱 {{ wp.user.phone_number }} · {{ wp.total_jobs_completed }} {% trans "jobs" %}
+                            {% if wp.cooperative %} · {{ wp.cooperative.name }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'cooperative_admin:enroll_insurance' worker_id=wp.pk %}" class="flex items-center space-x-2">
+                    {% csrf_token %}
+                    <select name="coverage_type" class="text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1.5 font-semibold">
+                        <option value="combined">🛡️ {% trans "Combined Cover" %}</option>
+                        <option value="accident">⚡ {% trans "Accident Only" %}</option>
+                        <option value="health">🏥 {% trans "Health Only" %}</option>
+                        <option value="life">💚 {% trans "Life Insurance" %}</option>
+                    </select>
+                    <input type="hidden" name="coverage_amount" value="500000">
+                    <button type="submit"
+                        class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                        <span>✅</span>
+                        <span>{% trans "Enroll — ₹5L Cover" %}</span>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Active Insurance Roster
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span>📋</span>
+                <span>{% trans "Insurance Policy Roster" %} ({{ all_policies|length }})</span>
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-surface-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                    <tr>
+                        <th class="px-4 py-3">{% trans "Worker" %}</th>
+                        <th class="px-4 py-3">{% trans "Policy #" %}</th>
+                        <th class="px-4 py-3">{% trans "Type" %}</th>
+                        <th class="px-4 py-3">{% trans "Coverage" %}</th>
+                        <th class="px-4 py-3">{% trans "Validity" %}</th>
+                        <th class="px-4 py-3">{% trans "Status" %}</th>
+                        <th class="px-4 py-3">{% trans "Enrolled By" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for policy in all_policies %}
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-black border border-indigo-100 dark:border-indigo-800">
+                                    {{ policy.worker.user.first_name|first|default:"W"|upper }}
+                                </div>
+                                <span class="font-bold text-slate-800 dark:text-white">{{ policy.worker.user.get_full_name|default:policy.worker.user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-600 dark:text-indigo-400 tracking-wider">{{ policy.policy_number }}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ policy.get_coverage_type_display }}</td>
+                        <td class="px-4 py-3 font-extrabold text-emerald-700 dark:text-emerald-400">₹{{ policy.coverage_amount|floatformat:0 }}</td>
+                        <td class="px-4 py-3 text-slate-500 dark:text-slate-400">
+                            {{ policy.valid_from|date:"d/m/Y" }} — {{ policy.valid_till|date:"d/m/Y" }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border
+                                {% if policy.status == 'active' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                                {% elif policy.status == 'pending' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                                {% elif policy.status == 'expired' %}bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800
+                                {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700{% endif %}">
+                                {{ policy.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ policy.enrolled_by.get_full_name|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-10 text-center text-slate-400 dark:text-slate-500">
+                            <p class="text-3xl mb-2">🛡️</p>
+                            <p class="text-xs font-semibold">{% trans "No insurance policies enrolled yet" %}</p>
+                            <p class="text-[11px] text-slate-400 mt-1">{% trans "Use the enrollment section above to cover verified workers" %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6">
+        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mb-4 flex items-center space-x-2">
+            <span>📖</span>
+            <span>{% trans "How the Cooperative Safety Pool Works" %}</span>
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="p-4 bg-surface-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <p class="text-2xl mb-2">💸</p>
+                <p class="font-bold text-slate-900 dark:text-white mb-1">{% trans "1. Fee Collection" %}</p>
+                <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {% trans "5% cooperative platform fee is collected from every completed booking. This fee is NOT profit — it funds worker welfare." %}
+                </p>
+            </div>
+            <div class="p-4 bg-surface-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <p class="text-2xl mb-2">🛡️</p>
+                <p class="font-bold text-slate-900 dark:text-white mb-1">{% trans "2. Pool Allocation" %}</p>
+                <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {% trans "60% funds insurance premiums, 25% goes to emergency medical fund, 15% is kept as contingency reserve." %}
+                </p>
+            </div>
+            <div class="p-4 bg-surface-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <p class="text-2xl mb-2">✅</p>
+                <p class="font-bold text-slate-900 dark:text-white mb-1">{% trans "3. Worker Coverage" %}</p>
+                <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+                    {% trans "Workers receive on-duty accident, health, and life coverage at ZERO direct cost — fully funded by the cooperative model." %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

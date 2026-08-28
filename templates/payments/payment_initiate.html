@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Pay" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 sm:px-6 py-8">
+    <h1 class="text-2xl font-bold mb-6">💳 {% trans "Complete Payment" %}</h1>
+
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="text-center mb-6">
+            <p class="text-gray-600">{% trans "Amount to Pay" %}</p>
+            <p class="text-4xl font-bold text-primary-600">₹{{ invoice.amount|floatformat:0 }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ invoice.booking.service_category.name }}</p>
+        </div>
+
+        <div class="space-y-2 mb-6 text-sm">
+            <div class="flex justify-between">
+                <span class="text-gray-500">{% trans "Subtotal" %}</span>
+                <span>₹{{ invoice.amount|floatformat:0 }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">{% trans "Platform Fee" %}</span>
+                <span>₹{{ invoice.platform_fee|floatformat:0 }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">{% trans "Tax (GST)" %}</span>
+                <span>₹{{ invoice.tax|floatformat:0 }}</span>
+            </div>
+        </div>
+
+        <!-- Razorpay Button (Placeholder for Part 3) -->
+        <button onclick="alert('Razorpay integration will be active in Part 3!')"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition text-base">
+            💳 {% trans "Pay with Razorpay" %}
+        </button>
+
+        <p class="text-center text-xs text-gray-400 mt-4">
+            {% trans "Test mode — Use Razorpay test card: 4111 1111 1111 1111" %}
+        </p>
+    </div>
+</div>
+{% endblock %}

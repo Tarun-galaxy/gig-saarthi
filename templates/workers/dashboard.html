@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Worker Dashboard" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 sm:px-6 py-6 pb-24 md:pb-8">
+
+    <!-- ─── Minimalist Worker Header & Availability Indicator ─── -->
+    <div class="bg-white rounded-2xl p-5 mb-5 border border-slate-200/80 shadow-subtle flex items-center justify-between">
+        <div class="flex items-center space-x-3.5">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 text-white flex items-center justify-center text-lg font-bold shadow-xs">
+                {{ profile.user.first_name|first|default:profile.user.username|first|upper }}
+            </div>
+            <div>
+                <h1 class="text-base font-extrabold text-slate-900 leading-tight">
+                    {{ profile.user.get_full_name|default:profile.user.username }}
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    {{ profile.cooperative.name|default:"Independent Member" }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Availability Status Pill Indicator -->
+        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full border text-xs font-bold {% if profile.availability_status == 'available' %}bg-emerald-50 text-emerald-700 border-emerald-200{% elif profile.availability_status == 'busy' %}bg-amber-50 text-amber-800 border-amber-200{% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
+            <span class="w-2 h-2 rounded-full {% if profile.availability_status == 'available' %}bg-emerald-500 animate-pulse ring-4 ring-emerald-100{% elif profile.availability_status == 'busy' %}bg-amber-500{% else %}bg-slate-400{% endif %}"></span>
+            <span>{{ profile.get_availability_status_display }}</span>
+        </div>
+    </div>
+
+    <!-- ─── Quick Stats Metrics ─── -->
+    <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-4 text-center">
+            <p class="text-2xl font-extrabold text-slate-900">{{ total_completed }}</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-0.5">{% trans "Jobs Done" %}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-4 text-center">
+            <p class="text-2xl font-extrabold text-emerald-600">₹{{ total_earnings|floatformat:0 }}</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-0.5">{% trans "Earned" %}</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-4 text-center">
+            <p class="text-2xl font-extrabold text-amber-500">⭐ {% if avg_rating %}{{ avg_rating|floatformat:1 }}{% else %}—{% endif %}</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mt-0.5">{% trans "Rating" %}</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  INCOMING REQUESTS (Ola-style cards)        -->
+    <!-- ═══════════════════════════════════════════ -->
+    {% if available_jobs %}
+    <div class="mb-7">
+        <div class="flex items-center justify-between mb-3 px-1">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span>{% trans "New Incoming Requests" %}</span>
+            </h2>
+            <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-0.5 rounded-full">{{ available_jobs|length }}</span>
+        </div>
+
+        {% for item in available_jobs %}
+        {% with b=item.booking route=item.route %}
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-floating border-2 border-emerald-400/80 dark:border-emerald-600/70 mb-4 overflow-hidden job-card" data-booking-id="{{ b.pk }}" data-timeout="{{ item.accept_timeout }}">
+            <!-- Smooth Countdown timer bar -->
+            <div class="h-1.5 bg-slate-100 dark:bg-slate-800 w-full overflow-hidden">
+                <div class="h-full bg-emerald-500 accept-bar" style="width: 100%; transition: width {{ item.accept_timeout }}s linear;"></div>
+            </div>
+
+            <div class="p-5">
+                <!-- Service Title & Emergency Badge -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-3xl p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">{{ b.service_category.icon }}</span>
+                        <div>
+                            <p class="font-black text-slate-900 dark:text-white text-base leading-tight">{{ b.service_category.name }}</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">#{{ b.pk }} &middot; {{ b.created_at|timesince }} {% trans "ago" %}</p>
+                        </div>
+                    </div>
+                    {% if b.is_emergency %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 ring-1 ring-rose-500/20 animate-pulse">
+                        🚨 {% trans "URGENT" %}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Customer Details & Distance Box -->
+                <div class="mb-3.5 bg-slate-50/90 dark:bg-slate-950/80 rounded-2xl p-3.5 border border-slate-200/80 dark:border-slate-800">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 text-white flex items-center justify-center text-xs font-black shadow-xs flex-shrink-0">
+                                {{ b.customer.first_name|first|default:b.customer.username|first|upper }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                                    {{ b.customer.get_full_name|default:b.customer.username }}
+                                </p>
+                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                                    {% trans "Customer" %}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if route %}
+                        <div class="text-right flex-shrink-0 bg-primary-50 dark:bg-primary-950/70 px-2.5 py-1 rounded-xl border border-primary-200/70 dark:border-primary-800/70">
+                            <p class="text-xs font-black text-primary-700 dark:text-primary-300">{{ route.distance_km }} km</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">~{{ route.duration_min|floatformat:0 }} min</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Address -->
+                    <div class="flex items-start space-x-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/70 text-xs text-slate-700 dark:text-slate-300">
+                        <span class="text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0">📍</span>
+                        <span class="font-semibold leading-snug">{{ b.address_text|default:"Address provided on map" }}</span>
+                    </div>
+                </div>
+
+                <!-- Description / Requirements Note -->
+                {% if b.description %}
+                <div class="mb-4 bg-slate-50/70 dark:bg-slate-950/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <span class="font-bold text-slate-500 dark:text-slate-400 mr-1">📝 {% trans "Note:" %}</span>
+                    <span>{{ b.description }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Schedule & Estimated Price -->
+                <div class="flex items-center justify-between py-2.5 border-t border-slate-200/80 dark:border-slate-800 mb-4 text-xs font-semibold">
+                    <span class="text-slate-600 dark:text-slate-400 flex items-center space-x-1.5 font-medium">
+                        <span class="text-amber-500">🕐</span>
+                        <span>{{ b.scheduled_datetime|date:"d M, g:i A" }}</span>
+                    </span>
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 block">{% trans "Payout Estimate" %}</span>
+                        <span class="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">₹{{ b.estimated_price|floatformat:0 }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="grid grid-cols-2 gap-3">
+                    <form method="post" action="{% url 'bookings:accept' booking_id=b.pk %}" class="w-full">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3 rounded-xl font-black text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <span>✓</span>
+                            <span>{% trans "Accept Job" %}</span>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'bookings:reject' booking_id=b.pk %}" class="w-full">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 text-slate-700 hover:text-rose-700 dark:text-slate-100 dark:hover:text-rose-300 py-3 rounded-xl font-extrabold text-sm shadow-xs transition-all active:scale-[0.98] flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <span class="text-rose-500 text-base">✕</span>
+                            <span>{% trans "Pass" %}</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════ -->
+    <!--  ACTIVE JOBS WITH ROUTE     -->
+    <!-- ═══════════════════════════ -->
+    {% if active_bookings %}
+    <div class="mb-7">
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center space-x-2">
+            <span>⚡</span>
+            <span>{% trans "Active Jobs in Progress" %}</span>
+        </h2>
+
+        {% for item in active_bookings %}
+        {% with b=item.booking route=item.route %}
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-card mb-5 overflow-hidden border border-slate-200/80 dark:border-slate-800 isolate" id="job-container-{{ b.pk }}">
+
+            <!-- ─── Uber-Style Live Rider Map Container with Floating HUD ─── -->
+            <div class="relative w-full overflow-hidden bg-slate-950 isolate z-10" style="height: 320px;" id="map-wrapper-{{ b.pk }}">
+                
+                <!-- The Leaflet Map Canvas -->
+                <div id="active-map-{{ b.pk }}" class="w-full h-full"></div>
+
+                <!-- Floating Top HUD: Next Turn Direction Banner (Uber Rider Style) -->
+                {% if route and route.steps and route.steps|length > 0 %}
+                <div class="absolute top-3 left-3 right-3 z-[1000] pointer-events-none">
+                    <div class="bg-slate-900/90 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-floating border border-slate-700/60 flex items-center space-x-3 pointer-events-auto">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-base shadow-xs flex-shrink-0">
+                            ⮵
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{% trans "Next Maneuver" %}</p>
+                            <p class="text-xs font-bold text-white truncate" id="next-step-instruction-{{ b.pk }}">
+                                {{ route.steps.0.instruction|default:"Proceed along recommended route" }}
+                            </p>
+                        </div>
+                        {% if route.steps.0.distance %}
+                        <span class="text-xs font-extrabold text-emerald-300 font-mono bg-emerald-950/80 px-2 py-1 rounded-lg border border-emerald-800/60 flex-shrink-0">
+                            {{ route.steps.0.distance }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Floating Right Controls: Zoom, Re-center, Fit Route & Fullscreen -->
+                <div class="absolute bottom-4 right-3 z-[1000] flex flex-col space-y-2">
+                    <!-- Re-center on Worker Location -->
+                    <button type="button" id="btn-recenter-{{ b.pk }}" title="Re-center My GPS"
+                        class="w-10 h-10 bg-slate-900/90 text-white hover:bg-slate-800 backdrop-blur-md rounded-xl shadow-floating flex items-center justify-center text-base border border-slate-700/80 font-bold active:scale-90 transition-all cursor-pointer">
+                        🎯
+                    </button>
+                    <!-- Fit Full Route -->
+                    <button type="button" id="btn-fitroute-{{ b.pk }}" title="Fit Full Route"
+                        class="w-10 h-10 bg-slate-900/90 text-white hover:bg-slate-800 backdrop-blur-md rounded-xl shadow-floating flex items-center justify-center text-sm border border-slate-700/80 font-bold active:scale-90 transition-all cursor-pointer">
+                        🗺️
+                    </button>
+                    <!-- Zoom In -->
+                    <button type="button" id="btn-zoomin-{{ b.pk }}" title="Zoom In"
+                        class="w-10 h-10 bg-slate-900/90 text-white hover:bg-slate-800 backdrop-blur-md rounded-xl shadow-floating flex items-center justify-center border border-slate-700/80 active:scale-90 transition-all cursor-pointer">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    </button>
+                    <!-- Zoom Out -->
+                    <button type="button" id="btn-zoomout-{{ b.pk }}" title="Zoom Out"
+                        class="w-10 h-10 bg-slate-900/90 text-white hover:bg-slate-800 backdrop-blur-md rounded-xl shadow-floating flex items-center justify-center border border-slate-700/80 active:scale-90 transition-all cursor-pointer">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Floating Left Bottom Status: Live GPS Accuracy Pulse -->
+                <div class="absolute bottom-4 left-3 z-[1000]">
+                    <div class="bg-slate-900/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[11px] font-bold border border-slate-700/60 flex items-center space-x-2 shadow-floating">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span id="gps-status-{{ b.pk }}">{% trans "Live GPS Connected" %}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distance & ETA Strip with Live Navigation App Link -->
+            {% if route %}
+            <div class="flex flex-wrap items-center justify-between px-4 py-3 bg-indigo-50/80 border-y border-indigo-100 text-xs gap-2">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <span class="font-extrabold text-indigo-950 text-sm" id="live-distance-{{ b.pk }}">{{ route.distance_km }}</span>
+                        <span class="text-indigo-600 text-[10px] font-bold uppercase ml-0.5">km away</span>
+                    </div>
+                    <div class="w-px h-4 bg-indigo-200"></div>
+                    <div>
+                        <span class="font-extrabold text-indigo-950 text-sm" id="live-eta-{{ b.pk }}">~{{ route.duration_min|floatformat:0 }}</span>
+                        <span class="text-indigo-600 text-[10px] font-bold uppercase ml-0.5">mins</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <!-- Turn-by-Turn Steps Toggle -->
+                    <button type="button" onclick="var el=document.getElementById('directions-{{ b.pk }}'); el.classList.toggle('hidden');"
+                            class="bg-white border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-indigo-50 transition flex items-center space-x-1 shadow-2xs">
+                        <span>📜</span>
+                        <span>{% trans "Turn Steps" %}</span>
+                    </button>
+                    <!-- Open in Google Maps Navigation App -->
+                    <a href="https://www.google.com/maps/dir/?api=1&destination={{ b.latitude }},{{ b.longitude }}&travelmode=driving" target="_blank" rel="noopener noreferrer"
+                       class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1 shadow-sm active:scale-95">
+                        <span>↗</span>
+                        <span>{% trans "Open in Maps" %}</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Customer & Action Content -->
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3.5">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-3xl p-2 bg-surface-50 rounded-xl border border-slate-100 shadow-xs">{{ b.service_category.icon }}</span>
+                        <div>
+                            <p class="font-extrabold text-slate-900 text-sm">{{ b.service_category.name }}</p>
+                            <p class="text-[11px] text-slate-500 font-mono">#{{ b.pk }} &middot; {{ b.customer.get_full_name|default:b.customer.username }}</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border
+                        {% if b.status == 'accepted' %}bg-indigo-50 text-indigo-700 border-indigo-200
+                        {% elif b.status == 'in_progress' %}bg-blue-50 text-blue-700 border-blue-200{% endif %}">
+                        {{ b.get_status_display }}
+                    </span>
+                </div>
+
+                <!-- Destination Box -->
+                <div class="flex items-start space-x-2.5 mb-3.5 bg-surface-50 rounded-xl p-3.5 border border-slate-100">
+                    <span class="text-rose-500 text-base mt-0.5">📍</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900">{{ b.address_text }}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">{{ b.scheduled_datetime|date:"d M, g:i A" }} &middot; <span class="font-extrabold text-emerald-600 font-mono">₹{{ b.estimated_price|floatformat:0 }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Step-by-step turn directions with click-to-zoom -->
+                {% if route and route.steps %}
+                <div id="directions-{{ b.pk }}" class="hidden mb-4">
+                    <div class="bg-surface-50 rounded-2xl p-4 max-h-56 overflow-y-auto border border-slate-200/70 space-y-2">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">{% trans "Turn-by-Turn Rider Directions" %}</p>
+                            <span class="text-[10px] text-slate-400">{% trans "Tap any step to inspect" %}</span>
+                        </div>
+                        {% for step in route.steps %}
+                        <div class="flex items-start space-x-2.5 p-2 rounded-xl bg-white hover:bg-indigo-50/60 border border-slate-100 cursor-pointer transition"
+                             onclick="if(window.focusStep_{{ b.pk }}) window.focusStep_{{ b.pk }}({{ forloop.counter0 }});">
+                            <span class="w-5 h-5 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-[10px] font-extrabold mt-0.5 flex-shrink-0">{{ forloop.counter }}</span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-slate-800">{{ step.instruction }}</p>
+                                {% if step.distance %}
+                                <p class="text-[10px] text-slate-400 font-mono mt-0.5">{{ step.distance }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Lifecycle Action Controls -->
+                <div class="flex gap-2.5">
+                    {% if b.status == 'accepted' %}
+                    <form method="post" action="{% url 'bookings:update_status' pk=b.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="in_progress">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                            <span>▶</span>
+                            <span>{% trans "Start Job & Begin On-Site" %}</span>
+                        </button>
+                    </form>
+                    {% elif b.status == 'in_progress' %}
+                    <form method="post" action="{% url 'bookings:update_status' pk=b.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="completed">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                            <span>✓</span>
+                            <span>{% trans "Mark Job Complete" %}</span>
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="tel:{{ b.customer.phone_number }}" class="bg-surface-100 hover:bg-surface-200 border border-slate-200 text-slate-700 px-4 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center transition active:scale-[0.98]" title="Call Customer">
+                        📞
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════ -->
+    <!--  RECENT COMPLETED JOBS      -->
+    <!-- ═══════════════════════════ -->
+    {% if completed_bookings %}
+    <div class="mb-6">
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">✅ {% trans "Recently Completed" %}</h2>
+
+        {% for b in completed_bookings %}
+        <a href="{% url 'bookings:detail' pk=b.pk %}" class="flex items-center p-3.5 bg-white rounded-xl shadow-subtle mb-2.5 border border-slate-200/80 hover:border-slate-300 transition">
+            <span class="text-2xl mr-3">{{ b.service_category.icon }}</span>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-slate-900 truncate">{{ b.service_category.name }}</p>
+                <p class="text-[11px] text-slate-500">{{ b.completed_at|date:"d M, Y" }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs font-extrabold text-emerald-600 font-mono">₹{{ b.estimated_price|floatformat:0 }}</p>
+                <span class="text-[10px] text-slate-400">{% trans "Paid" %}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Empty State -->
+    {% if not available_jobs and not active_bookings %}
+    <div class="text-center py-12 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 mb-6">
+        <p class="text-4xl mb-3">👷</p>
+        <p class="text-sm font-bold text-slate-800 mb-1">{% trans "Ready for new requests" %}</p>
+        <p class="text-xs text-slate-500">{% trans "New matched requests from customers in your area will appear here in real-time." %}</p>
+    </div>
+    {% endif %}
+
+    <!-- Quick Links Navigation -->
+    <div class="grid grid-cols-2 gap-3">
+        <a href="{% url 'bookings:list' %}" class="bg-white border border-slate-200/80 hover:bg-slate-50 text-center py-3 rounded-xl text-xs font-bold text-slate-700 shadow-subtle transition">
+            📋 {% trans "All Job History" %}
+        </a>
+        <a href="{% url 'workers:my_profile' %}" class="bg-white border border-slate-200/80 hover:bg-slate-50 text-center py-3 rounded-xl text-xs font-bold text-slate-700 shadow-subtle transition">
+            👤 {% trans "Edit Worker Profile" %}
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ═════════════════════════════════════════════════════════════════
+//  UBER-STYLE RIDER LIVE NAVIGATION & ZOOMABLE MAP ENGINE
+// ═════════════════════════════════════════════════════════════════
+{% for item in active_bookings %}
+{% with b=item.booking route=item.route %}
+(function() {
+    var workerLat = {{ profile.current_latitude|default:"28.6139" }};
+    var workerLng = {{ profile.current_longitude|default:"77.2090" }};
+    var customerLat = {{ b.latitude }};
+    var customerLng = {{ b.longitude }};
+    var mapId = 'active-map-{{ b.pk }}';
+    var mapDiv = document.getElementById(mapId);
+    if (!mapDiv) return;
+
+    // 1. Initialize Leaflet Map with full interactive gestures & zoom enabled
+    var map = L.map(mapId, {
+        zoomControl: false,          // We provide custom floating glassmorphic buttons
+        attributionControl: false,
+        scrollWheelZoom: true,       // Fully zoomable with wheel
+        touchZoom: true,             // Fully zoomable with pinch gestures
+        doubleClickZoom: true,       // Zoom on double-click
+        dragging: true,              // Pan/drag enabled
+        boxZoom: true
+    }).setView([workerLat, workerLng], 14);
+
+    // 2. Crisp Navigation / Bright Tile Layer with fallback
+    L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey={{ geoapify_key|default:"37636925f80b4e0494861b4e9f0a0101" }}', {
+        maxZoom: 19
+    }).addTo(map);
+
+    // 3. Animated Uber Rider Live Marker with Radar Pulsing Halo
+    var riderIcon = L.divIcon({
+        className: 'uber-rider-marker',
+        html: '<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">' +
+              '<div style="position:absolute;width:100%;height:100%;border-radius:50%;background:rgba(16,185,129,0.35);animation:ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>' +
+              '<div style="width:32px;height:32px;background:#10b981;border:3px solid #ffffff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;z-index:2;">🛵</div>' +
+              '</div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    var workerMarker = L.marker([workerLat, workerLng], {icon: riderIcon, zIndexOffset: 1000}).addTo(map)
+        .bindPopup('<b>{% trans "You (Live Rider)" %}</b><br>{% trans "Moving along delivery route" %}');
+
+    // 4. Customer Destination Marker
+    var destIcon = L.divIcon({
+        className: 'uber-dest-marker',
+        html: '<div style="width:34px;height:34px;background:#ef4444;border:3px solid #ffffff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;">📍</div>',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+    });
+    var destMarker = L.marker([customerLat, customerLng], {icon: destIcon}).addTo(map)
+        .bindPopup('<b>{% trans "Destination" %}:</b> {{ b.address_text|escapejs }}');
+
+    // Helper to dynamically slice route so the polyline shrinks as the Saarthi progresses
+    function sliceRouteFromPosition(currentLatLng, fullCoords) {
+        if (!fullCoords || fullCoords.length <= 1) {
+            return [currentLatLng];
+        }
+        var curLat = currentLatLng[0] !== undefined ? currentLatLng[0] : currentLatLng.lat;
+        var curLng = currentLatLng[1] !== undefined ? currentLatLng[1] : currentLatLng.lng;
+        
+        var minDistanceSq = Infinity;
+        var closestIdx = 0;
+        
+        for (var i = 0; i < fullCoords.length; i++) {
+            var pt = fullCoords[i];
+            var ptLat = pt[0] !== undefined ? pt[0] : pt.lat;
+            var ptLng = pt[1] !== undefined ? pt[1] : pt.lng;
+            var dLat = ptLat - curLat;
+            var dLng = ptLng - curLng;
+            var distSq = dLat * dLat + dLng * dLng;
+            if (distSq < minDistanceSq) {
+                minDistanceSq = distSq;
+                closestIdx = i;
+            }
+        }
+        
+        var remaining = [[curLat, curLng]];
+        for (var j = closestIdx + 1; j < fullCoords.length; j++) {
+            var p = fullCoords[j];
+            remaining.push([p[0] !== undefined ? p[0] : p.lat, p[1] !== undefined ? p[1] : p.lng]);
+        }
+        
+        if (remaining.length === 1 && fullCoords.length > 0) {
+            var lastPt = fullCoords[fullCoords.length - 1];
+            remaining.push([lastPt[0] !== undefined ? lastPt[0] : lastPt.lat, lastPt[1] !== undefined ? lastPt[1] : lastPt.lng]);
+        }
+        
+        return remaining;
+    }
+
+    // 5. Route Polyline Rendering with Dynamic Shrinking
+    var polylineLayer = null;
+    {% if route and route.polyline %}
+    var fullRouteCoords = {{ route.polyline|safe }};
+    var initialRemaining = sliceRouteFromPosition([workerLat, workerLng], fullRouteCoords);
+    polylineLayer = L.polyline(initialRemaining, {
+        color: '#4f46e5',
+        weight: 6,
+        opacity: 0.9,
+        lineJoin: 'round',
+        lineCap: 'round',
+        smoothFactor: 1
+    }).addTo(map);
+    map.fitBounds(L.polyline(fullRouteCoords).getBounds(), {padding: [50, 50]});
+    {% else %}
+    var fullRouteCoords = [[workerLat, workerLng], [customerLat, customerLng]];
+    polylineLayer = L.polyline([[workerLat, workerLng], [customerLat, customerLng]], {
+        color: '#4f46e5',
+        weight: 4,
+        dashArray: '8, 8',
+        opacity: 0.8
+    }).addTo(map);
+    map.fitBounds([[workerLat, workerLng], [customerLat, customerLng]], {padding: [50, 50]});
+    {% endif %}
+
+    // 6. Connect Custom Floating HUD Controls
+    var btnRecenter = document.getElementById('btn-recenter-{{ b.pk }}');
+    if (btnRecenter) {
+        btnRecenter.addEventListener('click', function() {
+            map.flyTo(workerMarker.getLatLng(), 16, { animate: true, duration: 1 });
+        });
+    }
+
+    var btnFitRoute = document.getElementById('btn-fitroute-{{ b.pk }}');
+    if (btnFitRoute && polylineLayer) {
+        btnFitRoute.addEventListener('click', function() {
+            if (fullRouteCoords && fullRouteCoords.length > 0) {
+                map.fitBounds(L.polyline(fullRouteCoords).getBounds(), { padding: [50, 50], animate: true });
+            } else {
+                map.fitBounds(polylineLayer.getBounds(), { padding: [50, 50], animate: true });
+            }
+        });
+    }
+
+    var btnZoomIn = document.getElementById('btn-zoomin-{{ b.pk }}');
+    if (btnZoomIn) {
+        btnZoomIn.addEventListener('click', function() { map.zoomIn(); });
+    }
+
+    var btnZoomOut = document.getElementById('btn-zoomout-{{ b.pk }}');
+    if (btnZoomOut) {
+        btnZoomOut.addEventListener('click', function() { map.zoomOut(); });
+    }
+
+    // 7. Interactive Turn Steps Inspector
+    window.focusStep_{{ b.pk }} = function(stepIdx) {
+        {% if route and route.steps %}
+        var steps = {{ route.steps|safe }};
+        if (steps && steps[stepIdx]) {
+            // Find next instruction header
+            var instrEl = document.getElementById('next-step-instruction-{{ b.pk }}');
+            if (instrEl) {
+                instrEl.innerText = steps[stepIdx].instruction;
+            }
+        }
+        {% endif %}
+    };
+
+    // 8. Live Real-time GPS Position Tracking & Dynamic Line Shrinking
+    if (navigator.geolocation) {
+        var watchId = navigator.geolocation.watchPosition(
+            function(pos) {
+                var newLat = pos.coords.latitude;
+                var newLng = pos.coords.longitude;
+                var newPos = [newLat, newLng];
+                workerMarker.setLatLng(newPos);
+
+                // Dynamically shrink the route line ahead of the rider
+                if (fullRouteCoords && fullRouteCoords.length > 0 && polylineLayer) {
+                    var remaining = sliceRouteFromPosition(newPos, fullRouteCoords);
+                    polylineLayer.setLatLngs(remaining);
+                }
+
+                // Update status badge
+                var gpsStatus = document.getElementById('gps-status-{{ b.pk }}');
+                if (gpsStatus) {
+                    gpsStatus.innerText = '{% trans "Live GPS Tracking" %} (±' + Math.round(pos.coords.accuracy) + 'm)';
+                }
+
+                // Send live position telemetry to server to update worker profile location
+                fetch('/workers/api/location/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ latitude: newLat, longitude: newLng })
+                }).catch(function() {});
+            },
+            function(err) {
+                var gpsStatus = document.getElementById('gps-status-{{ b.pk }}');
+                if (gpsStatus) {
+                    gpsStatus.innerText = '{% trans "GPS Simulated" %}';
+                }
+            },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+    }
+
+    setTimeout(function() { map.invalidateSize(); }, 400);
+})();
+{% endwith %}
+{% endfor %}
+
+// ─── Auto-refresh new requests every 10 seconds ───
+setInterval(function() {
+    fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var newCards = doc.querySelectorAll('.job-card');
+            var currentCards = document.querySelectorAll('.job-card');
+            if (newCards.length !== currentCards.length) {
+                window.location.reload();
+            }
+        })
+        .catch(function() {});
+}, 10000);
+
+// ─── Countdown timer animation ───
+document.querySelectorAll('.job-card').forEach(function(card) {
+    var bar = card.querySelector('.accept-bar');
+    if (bar) {
+        setTimeout(function() { bar.style.width = '0%'; }, 50);
+    }
+});
+</script>
+{% endblock %}

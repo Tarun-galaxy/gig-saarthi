@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Invoice" %} #{{ invoice.pk }} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    <a href="{% url 'payments:list' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 mb-5 transition-colors">
+        <span>←</span>
+        <span>{% trans "Back to Invoices" %}</span>
+    </a>
+
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8">
+        <!-- Receipt Brand Header -->
+        <div class="text-center border-b border-slate-100 pb-5 mb-5">
+            <div class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-100 mb-2 shadow-xs">
+                <span class="text-xl">🤝</span>
+            </div>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Gig Saarthi Cooperative Federation</h1>
+            <p class="text-xs text-slate-500 font-mono mt-0.5">{% trans "Tax Invoice & Settlement Receipt" %} #{{ invoice.pk }}</p>
+            
+            <div class="mt-2.5">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border
+                    {% if invoice.status == 'paid' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                    {% elif invoice.status == 'pending' %}bg-amber-50 text-amber-800 border-amber-200
+                    {% elif invoice.status == 'failed' %}bg-rose-50 text-rose-700 border-rose-200
+                    {% else %}bg-slate-100 text-slate-700 border-slate-200{% endif %}">
+                    {{ invoice.get_status_display }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Service & Parties Details -->
+        <div class="mb-5">
+            <div class="flex items-center space-x-3.5 p-3.5 bg-surface-50 rounded-xl border border-slate-100 mb-4">
+                <span class="text-3xl p-2 bg-white rounded-lg border border-slate-100 shadow-xs">{{ invoice.booking.service_category.icon }}</span>
+                <div>
+                    <p class="font-extrabold text-xs text-slate-900">{{ invoice.booking.service_category.name }}</p>
+                    <p class="text-[11px] text-slate-500 font-mono">{% trans "Booking Reference" %} #{{ invoice.booking.pk }}</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500 font-medium">{% trans "Customer / Billed To" %}</span>
+                    <span class="font-bold text-slate-800">{{ invoice.booking.customer.get_full_name|default:invoice.booking.customer.username }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500 font-medium">{% trans "Assigned Service Saarthi" %}</span>
+                    <span class="font-bold text-slate-800">{{ invoice.booking.worker.get_full_name|default:"—" }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500 font-medium">{% trans "Date & Time Generated" %}</span>
+                    <span class="font-mono text-slate-800">{{ invoice.generated_at|date:"d M Y, g:i A" }}</span>
+                </div>
+                {% if invoice.booking.address_text %}
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500 font-medium">{% trans "Service Site Location" %}</span>
+                    <span class="text-right max-w-[60%] font-medium text-slate-800">{{ invoice.booking.address_text }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pricing Breakdown Grid -->
+        <div class="space-y-2 text-xs mb-5 bg-surface-50 p-4 rounded-xl border border-slate-100">
+            <div class="flex justify-between py-1">
+                <span class="text-slate-600 font-medium">{% trans "Service Base Amount" %}</span>
+                <span class="font-mono font-bold text-slate-800">₹{{ invoice.amount|floatformat:0 }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-slate-100 text-sm">
+                <span class="text-slate-600 font-medium">{% trans "Platform & Cooperative Fee (5%)" %}</span>
+                <span class="font-mono text-slate-500">- ₹{{ invoice.platform_fee|floatformat:0 }}</span>
+            </div>
+            <div class="flex justify-between py-1">
+                <span class="text-slate-600 font-medium">{% trans "Statutory Tax (GST 18%)" %}</span>
+                <span class="font-mono text-slate-500">₹{{ invoice.tax|floatformat:0 }}</span>
+            </div>
+            <div class="border-t border-slate-200/80 my-2 pt-2 flex justify-between items-center">
+                <span class="text-sm font-black text-slate-900">{% trans "Gross Total Payable" %}</span>
+                <span class="text-base font-black text-emerald-600 font-mono">₹{{ invoice.amount|floatformat:0 }}</span>
+            </div>
+        </div>
+
+        {% if invoice.status == 'paid' and invoice.worker_payout %}
+        <!-- Worker Payout Settlement Alert -->
+        <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl mb-4 text-xs">
+            <p class="font-bold text-emerald-900">
+                ✅ {% trans "Worker Cooperative Payout" %}: <strong class="font-mono font-black">₹{{ invoice.worker_payout|floatformat:0 }}</strong>
+            </p>
+            <p class="text-[11px] text-emerald-700 mt-0.5">{% trans "Direct UPI settlement scheduled within 24 hours" %}</p>
+        </div>
+        {% endif %}
+
+        <!-- Razorpay Gateway Telemetry -->
+        {% if invoice.razorpay_payment_id %}
+        <div class="text-[11px] text-slate-400 font-mono space-y-1 mb-5 p-3 bg-surface-100 rounded-xl border border-slate-200/60">
+            <p><span class="text-slate-600 font-semibold">{% trans "Order ID" %}:</span> {{ invoice.razorpay_order_id }}</p>
+            <p><span class="text-slate-600 font-semibold">{% trans "Payment ID" %}:</span> {{ invoice.razorpay_payment_id }}</p>
+            {% if invoice.paid_at %}
+            <p><span class="text-slate-600 font-semibold">{% trans "Settled at" %}:</span> {{ invoice.paid_at|date:"d M Y, g:i A" }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Action Controls -->
+        <div class="flex gap-2.5">
+            {% if invoice.status == 'pending' %}
+            <a href="{% url 'payments:initiate' booking_id=invoice.booking.pk %}"
+                class="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                💳 {% trans "Pay with Razorpay" %}
+            </a>
+            {% endif %}
+
+            {% if invoice.status == 'paid' %}
+            <a href="{% url 'bookings:detail' pk=invoice.booking.pk %}"
+                class="flex-1 text-center bg-surface-50 hover:bg-surface-100 text-slate-800 border border-slate-200 py-3 rounded-xl text-xs font-bold transition">
+                📋 {% trans "View Booking Details" %}
+            </a>
+            {% endif %}
+
+            {% if user == invoice.booking.customer and invoice.status == 'pending' %}
+            <a href="{% url 'ratings:submit' booking_id=invoice.booking.pk %}"
+                class="flex-1 text-center bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 py-3 rounded-xl text-xs font-bold transition">
+                ⭐ {% trans "Rate Worker First" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

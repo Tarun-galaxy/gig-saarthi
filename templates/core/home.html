@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Gig Saarthi — Cooperative Gig Services Platform{% endblock %}
+
+{% block content %}
+<!-- Modern Hero Section -->
+<div class="relative overflow-hidden bg-gradient-to-b from-indigo-50/70 via-white to-surface-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 border-b border-slate-200/70 dark:border-slate-800 py-16 sm:py-24 transition-colors">
+    <!-- Subtle Background Ambient Glow -->
+    <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary-200/40 dark:bg-primary-900/20 blur-3xl rounded-full pointer-events-none"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto">
+            
+            <!-- Cooperative Federation Pill Badge -->
+            <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-200/80 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-semibold mb-6 shadow-xs">
+                <i data-lucide="landmark" class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400"></i>
+                <span>{% trans "Ministry of Cooperation — NCCT Initiative" %}</span>
+                <span class="w-1 h-1 rounded-full bg-indigo-400"></span>
+                <span class="text-indigo-600 dark:text-indigo-400 font-mono">ID: 26089</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15]">
+                Dignity & Fair Pay for Workers.<br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-indigo-600 to-primary-500 dark:from-primary-400 dark:via-indigo-300 dark:to-primary-400">
+                    Trusted Services for You.
+                </span>
+            </h1>
+
+            <p class="mt-5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                {% trans "India's premier cooperative gig platform connecting households with verified local service Saarthis through structured village, district, and state federations." %}
+            </p>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'core:dashboard' %}" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl text-base font-semibold shadow-card hover:shadow-floating transition-all">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5 text-white"></i>
+                        <span>{% trans "Go to Dashboard" %}</span>
+                        <span>→</span>
+                    </a>
+                    {% if user.is_customer %}
+                        <a href="{% url 'bookings:create' %}" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 px-7 py-3.5 rounded-xl text-base font-semibold shadow-subtle hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-primary-600"></i>
+                            <span>{% trans "Book a Service" %}</span>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'workers:dashboard' %}" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 px-7 py-3.5 rounded-xl text-base font-semibold shadow-subtle hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                            <i data-lucide="navigation" class="w-5 h-5 text-primary-600"></i>
+                            <span>{% trans "Rider Dashboard" %}</span>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-7 py-3.5 rounded-xl text-base font-semibold shadow-card hover:shadow-floating transition-all">
+                        <span>{% trans "Get Started" %}</span>
+                        <span>→</span>
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 px-7 py-3.5 rounded-xl text-base font-semibold shadow-subtle hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                        <i data-lucide="key-round" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
+                        <span>{% trans "Log In" %}</span>
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Sleek Unified Trust Indicator Bar -->
+            <div class="mt-12 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-card">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left">
+                    
+                    <!-- Item 1 -->
+                    <div class="flex items-center space-x-3.5 p-1">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">100% KYC Verified</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Aadhaar & Police check</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex items-center space-x-3.5 p-1">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Smart Geo-Match</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Under 15-min dispatch</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="flex items-center space-x-3.5 p-1">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Worker Insurance</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Accident & Health cover</p>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="flex items-center space-x-3.5 p-1">
+                        <div class="w-10 h-10 rounded-xl bg-primary-500/10 dark:bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0">
+                            <i data-lucide="wallet" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Direct UPI Payouts</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Fair 5% coop fee</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{% trans "Why Choose the Cooperative Model?" %}</h2>
+        <p class="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">{% trans "Unlike corporate gig giants, Gig Saarthi reinvests platform revenue back into worker safety nets and fair pricing." %}</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-7 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:-translate-y-0.5 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center mb-5 text-indigo-600 dark:text-indigo-400 shadow-xs">
+                <i data-lucide="users-round" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{% trans "Cooperative Federation" %}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{% trans "Workers organize through registered Village, District, and State cooperatives, enjoying collective bargaining, healthcare, and dignity." %}</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-7 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:-translate-y-0.5 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center mb-5 text-emerald-600 dark:text-emerald-400 shadow-xs">
+                <i data-lucide="map-pin" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{% trans "Haversine Geo-Matching" %}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{% trans "Our intelligent distance & rating matching engine pairs you with top-rated nearby pros in seconds, with emergency rapid dispatch." %}</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-7 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:-translate-y-0.5 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/70 border border-purple-100 dark:border-purple-800 flex items-center justify-center mb-5 text-purple-600 dark:text-purple-400 shadow-xs">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">{% trans "AI Demand Forecasting" %}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{% trans "Predictive seasonal & day-of-week demand models prevent worker shortages during festivals and high-demand weather seasons." %}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Service Categories Catalog -->
+<div class="bg-slate-100/70 dark:bg-slate-900/60 border-y border-slate-200/70 dark:border-slate-800 py-16 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
+            <div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{% trans "On-Demand Services" %}</h2>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{% trans "Book verified Saarthis across popular household categories" %}</p>
+            </div>
+            <a href="{% url 'bookings:create' %}" class="mt-3 sm:mt-0 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 inline-flex items-center space-x-1">
+                <span>{% trans "View all & book" %}</span>
+                <span>→</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {% for cat in categories %}
+            <a href="{% url 'bookings:create' %}?category={{ cat.id }}" class="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-subtle hover:shadow-card hover:border-primary-300 dark:hover:border-primary-500 transition-all text-center flex flex-col items-center">
+                <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-950/70 text-primary-600 dark:text-primary-400 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
+                    <span>{{ cat.icon }}</span>
+                </div>
+                <p class="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-tight">{{ cat.name }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{% if cat.description %}{{ cat.description }}{% elif cat.base_price %}Starting from ₹{{ cat.base_price|floatformat:0 }}{% else %}Verified pro service{% endif %}</p>
+            </a>
+            {% empty %}
+            <p class="text-xs text-slate-500 dark:text-slate-400 col-span-full text-center py-4">{% trans "No service categories available." %}</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modern Minimalist CTA Banner -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="rounded-3xl bg-gradient-to-r from-primary-700 via-primary-600 to-indigo-700 dark:from-primary-900 dark:via-indigo-900 dark:to-slate-900 text-white p-8 sm:p-12 text-center shadow-floating relative overflow-hidden border border-primary-500/20">
+        <div class="relative z-10 max-w-2xl mx-auto">
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">{% trans "Ready to experience fair, community-driven services?" %}</h2>
+            <p class="mt-3 text-sm sm:text-base text-primary-100 dark:text-indigo-200">{% trans "Join our growing network of cooperative gig workers and verified household customers today." %}</p>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+                <a href="{% url 'accounts:register' %}" class="bg-white dark:bg-slate-100 text-primary-700 hover:bg-primary-50 px-7 py-3 rounded-xl text-sm font-bold shadow-sm transition">
+                    {% trans "Register as Worker" %}
+                </a>
+                <a href="{% url 'bookings:create' %}" class="bg-primary-800/80 dark:bg-primary-800/60 hover:bg-primary-900 text-white border border-primary-400/40 px-7 py-3 rounded-xl text-sm font-bold transition">
+                    {% trans "Book a Service Now" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

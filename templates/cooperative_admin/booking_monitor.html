@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Booking Monitor" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">📋 {% trans "Federation Booking Monitor" %}</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">{% trans "Live bird's-eye view of all ongoing, matched, and settled platform bookings" %}</p>
+        </div>
+        <a href="{% url 'cooperative_admin:dashboard' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors">
+            <span>←</span>
+            <span>{% trans "Back to Dashboard" %}</span>
+        </a>
+    </div>
+
+    <!-- Status Filters Bar -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
+        <a href="{% url 'cooperative_admin:admin_booking_monitor' %}"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {% if not status_filter %}bg-primary-600 text-white shadow-xs{% else %}bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+            {% trans "All Bookings" %}
+        </a>
+        {% for value, label in status_choices %}
+        <a href="{% url 'cooperative_admin:admin_booking_monitor' %}?status={{ value }}"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap {% if status_filter == value %}bg-primary-600 text-white shadow-xs{% else %}bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-surface-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+                    <tr>
+                        <th class="px-5 py-3.5">#</th>
+                        <th class="px-5 py-3.5">{% trans "Customer" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Worker" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Service Category" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Status" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Created" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for booking in bookings %}
+                    <tr class="hover:bg-slate-50/80 cursor-pointer transition-colors" onclick="window.location='{% url 'bookings:detail' pk=booking.pk %}'">
+                        <td class="px-5 py-3.5 font-mono font-bold text-slate-700">#{{ booking.id }}</td>
+                        <td class="px-5 py-3.5 font-semibold text-slate-900">{{ booking.customer.get_full_name|default:booking.customer.username }}</td>
+                        <td class="px-5 py-3.5 text-slate-600">{{ booking.worker.get_full_name|default:"—" }}</td>
+                        <td class="px-5 py-3.5 text-slate-700">{{ booking.service_category.icon }} {{ booking.service_category.name }}</td>
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border
+                                    {% if booking.status == 'completed' %}bg-emerald-50 text-emerald-700 border-emerald-200
+                                    {% elif booking.status == 'in_progress' %}bg-blue-50 text-blue-700 border-blue-200
+                                    {% elif booking.status == 'matched' %}bg-amber-50 text-amber-800 border-amber-200
+                                    {% elif booking.status == 'pending' %}bg-amber-50 text-amber-700 border-amber-200
+                                    {% elif 'cancelled' in booking.status %}bg-rose-50 text-rose-700 border-rose-200
+                                    {% else %}bg-slate-100 text-slate-700 border-slate-200{% endif %}">
+                                    {{ booking.get_status_display }}
+                                </span>
+                                {% if booking.is_emergency %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
+                                    🚨
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 text-slate-400 font-mono">{{ booking.created_at|date:"d M, g:i A" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-16 text-center text-slate-400">{% trans "No bookings found matching this filter." %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Payment Failed" %} — Gig Saarthi{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 sm:px-6 py-16">
+    <div class="bg-white rounded-xl shadow-md p-8 text-center">
+        <div class="text-6xl mb-4">❌</div>
+        <h1 class="text-3xl font-bold text-red-600 mb-2">{% trans "Payment Failed" %}</h1>
+        <p class="text-gray-600 mb-6">{% trans "Your payment could not be processed. Please try again." %}</p>
+
+        <div class="p-4 bg-red-50 rounded-lg mb-6">
+            <p class="text-sm text-red-700">
+                {% trans "If money was deducted from your account, it will be refunded within 5-7 business days." %}
+            </p>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            {% if booking %}
+            <a href="{% url 'payments:initiate' booking_id=booking.pk %}" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3.5 rounded-xl font-bold transition shadow-sm">
+                💳 {% trans "Try Payment Again" %}
+            </a>
+            {% else %}
+            <a href="{% url 'bookings:list' %}" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3.5 rounded-xl font-bold transition shadow-sm">
+                {% trans "Go to Bookings" %}
+            </a>
+            {% endif %}
+            <a href="{% url 'payments:list' %}" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-medium transition">
+                {% trans "View Invoices" %}
+            </a>
+            <a href="{% url 'core:dashboard' %}" class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-400 text-xs font-semibold">
+                ← {% trans "Back to Dashboard" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
