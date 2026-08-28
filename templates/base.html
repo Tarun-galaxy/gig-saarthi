@@ -323,8 +323,8 @@
                         </div>
 
                     {% else %}
-                        <!-- Guest State (Hidden on landing page hero where CTA buttons already exist) -->
-                        {% if request.path != '/' and request.resolver_match.url_name != 'home' %}
+                        <!-- Guest State (Hidden on login, register, and landing pages) -->
+                        {% if request.path != '/' and request.resolver_match.url_name != 'home' and not '/accounts/login' in request.path and not '/accounts/register' in request.path %}
                         <a href="{% url 'accounts:login' %}" class="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary-600 transition-colors">
                             {% trans "Log In" %}
                         </a>
