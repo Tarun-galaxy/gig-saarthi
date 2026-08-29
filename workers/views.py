@@ -138,11 +138,9 @@ def worker_dashboard(request):
             else:
                 broadcast_bookings.append(pb)
 
-    all_incoming_bookings = direct_bookings + broadcast_bookings
-
-    # Enrich available incoming bookings with route distance + deadline
+    # Enrich direct incoming bookings with route distance + deadline
     available_with_route = []
-    for booking in all_incoming_bookings:
+    for booking in direct_bookings:
         route = None
         if (profile.current_latitude and profile.current_longitude and
                 booking.latitude and booking.longitude):
@@ -158,14 +156,51 @@ def worker_dashboard(request):
         available_with_route.append({
             'booking': booking,
             'route': route,
-            'is_broadcast': (booking.status == 'pending'),
+            'is_broadcast': False,
             'accept_seconds': accept_seconds,
             'accept_timeout': get_accept_timeout(booking),
         })
 
+    # Enrich open pool broadcast gigs
+    open_pool_gigs = []
+    for booking in broadcast_bookings:
+        route = None
+        if (profile.current_latitude and profile.current_longitude and
+                booking.latitude and booking.longitude):
+            route = get_route(
+                profile.current_latitude, profile.current_longitude,
+                booking.latitude, booking.longitude,
+            )
+        open_pool_gigs.append({
+            'booking': booking,
+            'route': route,
+            'is_broadcast': True,
+        })
+
+    # Active jobs (accepted / in_progress)
+    active_bookings_qs = Booking.objects.filter(
+        worker=request.user,
+        status__in=['accepted', 'in_progress'],
+    ).select_related('customer', 'service_category').order_by('scheduled_datetime')
+
+    # Recent completed jobs
+    completed_bookings = Booking.objects.filter(
+        worker=request.user,
+        status='completed',
+    ).select_related('customer', 'service_category').order_by('-completed_at')[:5]
+
+    # Stats
+    from django.db.models import Avg, Count, Sum
+    from ratings.models import Review
+    total_completed = request.user.worker_bookings.filter(status='completed').count()
+    avg_rating = Review.objects.filter(worker=request.user).aggregate(avg=Avg('overall_rating'))['avg'] or 0
+    total_earnings = request.user.worker_bookings.filter(
+        status='completed'
+    ).aggregate(total=Sum('final_price'))['total'] or 0
+
     # Enrich active bookings with route to customer
     active_with_route = []
-    for booking in active_bookings:
+    for booking in active_bookings_qs:
         route = None
         if (profile.current_latitude and profile.current_longitude and
                 booking.latitude and booking.longitude):

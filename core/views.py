@@ -15,7 +15,12 @@ def home(request):
         return redirect('core:dashboard')
     
     from bookings.models import ServiceCategory
-    categories = ServiceCategory.objects.filter(is_active=True).order_by('name')
+    try:
+        categories = list(ServiceCategory.objects.filter(is_active=True).order_by('name'))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("Failed to fetch service categories on home page: %s", e)
+        categories = []
     return render(request, 'core/home.html', {'categories': categories})
 
 

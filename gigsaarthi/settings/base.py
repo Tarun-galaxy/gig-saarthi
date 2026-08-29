@@ -94,7 +94,15 @@ DATABASES = {
 database_url = config('DATABASE_URL', default=None)
 if database_url:
     import dj_database_url
-    DATABASES['default'] = dj_database_url.parse(database_url, conn_max_age=600)
+    # For serverless / pooled Postgres (Neon), conn_health_checks ensures
+    # closed idle or scaled-to-zero connections are automatically re-opened.
+    conn_max_age = config('CONN_MAX_AGE', default=60, cast=int)
+    DATABASES['default'] = dj_database_url.parse(
+        database_url,
+        conn_max_age=conn_max_age,
+        conn_health_checks=True,
+    )
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
