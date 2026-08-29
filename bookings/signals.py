@@ -65,19 +65,19 @@ def booking_post_save(sender, instance, created, **kwargs):
 
 def _trigger_matching(booking):
     """
-    Trigger the geo-matching engine for a new booking.
-    Runs synchronously. Use Celery tasks for async in production.
+    Trigger the geo-matching engine for a new booking using broadcast dispatch.
+    Alerts all nearby qualified workers within distance radius simultaneously.
     """
-    from core.services.matching import find_and_assign_worker
+    from core.services.matching import broadcast_to_nearby_workers
     try:
-        result = find_and_assign_worker(booking)
+        result = broadcast_to_nearby_workers(booking)
         logger.info(
-            f"Booking #{booking.pk}: Matching result — "
+            f"Booking #{booking.pk}: Broadcast result — "
             f"success={result['success']}, "
-            f"candidates={result['candidates_count']}"
+            f"broadcast_count={result['broadcast_count']}"
         )
     except Exception as e:
-        logger.error(f"Booking #{booking.pk}: Matching failed — {e}")
+        logger.error(f"Booking #{booking.pk}: Broadcast matching failed — {e}")
 
 
 def _ensure_invoice(booking):

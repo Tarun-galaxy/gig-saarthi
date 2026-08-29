@@ -203,16 +203,27 @@ def login_view(request):
                 messages.error(request, 'Phone number is required.')
                 return render(request, 'accounts/login.html')
 
+            # Flexible phone user lookup (exact, normalized, or last 10 digits)
+            def find_user(p_num):
+                u = User.objects.filter(phone_number=p_num).first()
+                if u:
+                    return u
+                digits = ''.join(c for c in p_num if c.isdigit())
+                if len(digits) >= 10:
+                    return User.objects.filter(phone_number__endswith=digits[-10:]).first()
+                return None
+
+            user = find_user(phone_number)
+
             if otp_code:
                 # Verify OTP
                 success, message = verify_otp(phone_number, otp_code, purpose='login')
                 if success:
-                    try:
-                        user = User.objects.get(phone_number=phone_number)
+                    if user:
                         login(request, user)
                         messages.success(request, f'Welcome back, {user.first_name or user.username}!')
                         return redirect('core:dashboard')
-                    except User.DoesNotExist:
+                    else:
                         messages.error(request, 'No account found with this phone number. Please register first.')
                 else:
                     messages.error(request, message)
@@ -223,17 +234,15 @@ def login_view(request):
                     })
             else:
                 # Send OTP
-                try:
-                    User.objects.get(phone_number=phone_number)
-                except User.DoesNotExist:
+                if not user:
                     messages.error(request, 'No account found with this phone number. Please register first.')
                     return render(request, 'accounts/login.html')
 
-                verification_id, otp_code = create_otp_verification(phone_number, purpose='login')
-                messages.success(request, f'OTP sent to {phone_number}. Check the server console.')
+                verification_id, otp_code = create_otp_verification(user.phone_number, purpose='login')
+                messages.success(request, f'OTP sent to {user.phone_number}. Check the server console.')
                 return render(request, 'accounts/login.html', {
                     'otp_sent': True,
-                    'phone_number': phone_number,
+                    'phone_number': user.phone_number,
                     'login_method': 'otp',
                 })
 

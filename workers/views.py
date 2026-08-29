@@ -99,38 +99,50 @@ def worker_dashboard(request):
         messages.info(request, 'Please complete your worker profile first.')
         return redirect('workers:onboarding')
 
-    # Jobs waiting for this worker to accept/reject (Ola-style incoming request)
-    available_bookings = Booking.objects.filter(
+    from bookings.models import Booking, BookingStatusHistory
+    from core.services.matching import haversine_distance, MAX_SEARCH_RADIUS_KM, EMERGENCY_SEARCH_RADIUS_KM, get_accept_timeout
+
+    # Find IDs of bookings this worker has passed on
+    passed_booking_ids = BookingStatusHistory.objects.filter(
+        changed_by=request.user,
+        notes__icontains='passed'
+    ).values_list('booking_id', flat=True)
+
+    # 1. Direct matched bookings
+    direct_bookings = list(Booking.objects.filter(
         worker=request.user,
         status='matched',
-    ).select_related('customer', 'service_category').order_by('-created_at')
+    ).exclude(id__in=passed_booking_ids).select_related('customer', 'service_category'))
 
-    # Active jobs (accepted / in_progress)
-    active_bookings = Booking.objects.filter(
-        worker=request.user,
-        status__in=['accepted', 'in_progress'],
-    ).select_related('customer', 'service_category').order_by('scheduled_datetime')
+    # 2. Broadcast pending bookings matching worker's skills within search radius
+    broadcast_bookings = []
+    worker_skills = profile.skills.all()
+    if worker_skills.exists():
+        pending_candidates = Booking.objects.filter(
+            status='pending',
+            worker__isnull=True,
+            service_category__related_skills__in=worker_skills,
+        ).exclude(
+            id__in=passed_booking_ids
+        ).select_related('customer', 'service_category').distinct().order_by('-created_at')[:15]
 
-    # Recent completed jobs
-    completed_bookings = Booking.objects.filter(
-        worker=request.user,
-        status='completed',
-    ).select_related('customer', 'service_category').order_by('-completed_at')[:5]
+        for pb in pending_candidates:
+            if profile.current_latitude and profile.current_longitude and pb.latitude and pb.longitude:
+                dist = haversine_distance(
+                    pb.latitude, pb.longitude,
+                    profile.current_latitude, profile.current_longitude
+                )
+                max_rad = EMERGENCY_SEARCH_RADIUS_KM if pb.is_emergency else MAX_SEARCH_RADIUS_KM
+                if dist <= max_rad:
+                    broadcast_bookings.append(pb)
+            else:
+                broadcast_bookings.append(pb)
 
-    # Stats
-    from django.db.models import Avg, Count, Sum
-    from ratings.models import Review
-    total_completed = request.user.worker_bookings.filter(status='completed').count()
-    avg_rating = Review.objects.filter(worker=request.user).aggregate(avg=Avg('overall_rating'))['avg'] or 0
+    all_incoming_bookings = direct_bookings + broadcast_bookings
 
-    total_earnings = request.user.worker_bookings.filter(
-        status='completed'
-    ).aggregate(total=Sum('final_price'))['total'] or 0
-
-    # Enrich available bookings with route distance + deadline
-    from core.services.matching import get_accept_timeout
+    # Enrich available incoming bookings with route distance + deadline
     available_with_route = []
-    for booking in available_bookings:
+    for booking in all_incoming_bookings:
         route = None
         if (profile.current_latitude and profile.current_longitude and
                 booking.latitude and booking.longitude):
@@ -146,6 +158,7 @@ def worker_dashboard(request):
         available_with_route.append({
             'booking': booking,
             'route': route,
+            'is_broadcast': (booking.status == 'pending'),
             'accept_seconds': accept_seconds,
             'accept_timeout': get_accept_timeout(booking),
         })
@@ -168,6 +181,7 @@ def worker_dashboard(request):
     context = {
         'profile': profile,
         'available_jobs': available_with_route,
+        'open_pool_gigs': open_pool_gigs,
         'active_bookings': active_with_route,
         'completed_bookings': completed_bookings,
         'total_completed': total_completed,

@@ -78,5 +78,25 @@ def custom_500(request):
     return render(request, 'core/500.html', status=500)
 
 
+def health_check(request):
+    """
+    Lightweight health check endpoint for UptimeRobot, Render, and cloud monitors.
+    Returns HTTP 200 with JSON status to keep the free Render service awake.
+    """
+    from django.http import JsonResponse
+    from django.db import connection
+    db_ok = True
+    try:
+        connection.ensure_connection()
+    except Exception:
+        db_ok = False
+
+    return JsonResponse({
+        'status': 'healthy' if db_ok else 'degraded',
+        'app': 'Gig Saarthi',
+        'database': 'connected' if db_ok else 'unreachable',
+    }, status=200 if db_ok else 503)
+
+
 # Need to import settings for LANGUAGES
 from django.conf import settings

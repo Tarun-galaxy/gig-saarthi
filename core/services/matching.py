@@ -170,6 +170,78 @@ def find_nearby_workers(booking, max_results=TOP_CANDIDATES):
     return candidates[:max_results]
 
 
+def broadcast_to_nearby_workers(booking, max_candidates=10):
+    """
+    Broadcast a booking offer simultaneously to all nearby qualified workers.
+    All matching workers within distance radius receive notifications at once.
+    The first worker to accept claims the booking.
+    
+    Args:
+        booking: Booking instance (status='pending')
+        max_candidates: Max number of nearby workers to broadcast to (default 10)
+    
+    Returns:
+        dict: {
+            'success': bool,
+            'broadcast_count': int,
+            'message': str,
+        }
+    """
+    from bookings.models import BookingStatusHistory
+    from notifications.models import Notification
+
+    candidates = find_nearby_workers(booking, max_results=max_candidates)
+
+    if not candidates:
+        logger.info(f"No nearby workers found to broadcast booking #{booking.pk}")
+        return {
+            'success': False,
+            'broadcast_count': 0,
+            'message': 'No available workers found nearby within radius.',
+        }
+
+    # Ensure booking is tracked with broadcast timestamp
+    booking.matched_at = timezone.now()
+    booking.save(update_fields=['matched_at', 'updated_at'])
+
+    notified_names = []
+    for c in candidates:
+        worker = c['worker']
+        dist = c['distance_km']
+        notified_names.append(f"{worker.get_full_name()} ({dist}km)")
+        Notification.objects.create(
+            user=worker,
+            title=f'⚡ New Job Offer: {booking.service_category.name}',
+            message=(
+                f"Customer needs {booking.service_category.name} at {booking.address_text}. "
+                f"Distance: {dist}km. Scheduled: {booking.scheduled_datetime.strftime('%d %b, %I:%M %p')}. "
+                f"Payout estimate: ₹{booking.estimated_price:.0f}. Tap to Accept or Pass."
+            ),
+            notification_type='booking_request',
+            related_booking=booking,
+        )
+
+    # Log broadcast in history
+    BookingStatusHistory.objects.create(
+        booking=booking,
+        status='pending',
+        changed_by=None,
+        notes=f"Broadcasted to {len(candidates)} nearby Saarthis: {', '.join(notified_names[:4])}" +
+              (f" and {len(candidates) - 4} more" if len(candidates) > 4 else "")
+    )
+
+    logger.info(
+        f"Booking #{booking.pk} broadcasted to {len(candidates)} workers within search radius"
+    )
+
+    return {
+        'success': True,
+        'broadcast_count': len(candidates),
+        'candidates': candidates,
+        'message': f'Broadcasted to {len(candidates)} nearby Saarthis within distance radius.',
+    }
+
+
 def find_and_assign_worker(booking):
     """
     Find the best worker for a booking and assign them.
@@ -215,24 +287,24 @@ def find_and_assign_worker(booking):
         booking=booking,
         status='matched',
         changed_by=None,
-        notes=f"Auto-matched to {worker.get_full_name()} ({best['distance_km']}km away, {best['rating']}★)"
+        notes=f"Offer dispatched to {worker.get_full_name()} ({best['distance_km']}km away, {best['rating']}★) — awaiting worker decision"
     )
 
     # Notify the worker
     Notification.objects.create(
         user=worker,
-        title=f'New Job Request: {booking.service_category.name}',
+        title=f'New Job Offer: {booking.service_category.name}',
         message=(
             f"A customer needs {booking.service_category.name} at {booking.address_text}. "
             f"Scheduled: {booking.scheduled_datetime.strftime('%d %b, %I:%M %p')}. "
-            f"Distance: {best['distance_km']}km."
+            f"Distance: {best['distance_km']}km. Accept or pass within {get_accept_timeout(booking)//60} mins."
         ),
         notification_type='booking_request',
         related_booking=booking,
     )
 
     logger.info(
-        f"Booking #{booking.pk} matched to {worker.username} "
+        f"Booking #{booking.pk} offered to {worker.username} "
         f"({best['distance_km']}km, score={best['score']})"
     )
 
@@ -240,13 +312,13 @@ def find_and_assign_worker(booking):
         'success': True,
         'worker': worker,
         'candidates_count': len(candidates),
-        'message': f'Matched with {worker.get_full_name()} ({best["distance_km"]}km away)',
+        'message': f'Offer sent to {worker.get_full_name()} ({best["distance_km"]}km away)',
     }
 
 
 def reassign_to_next_worker(booking, exclude_worker_ids=None):
     """
-    When a worker rejects or times out, try the next available candidate.
+    When a worker rejects/passes or times out, try the next available candidate.
     
     Args:
         booking: Booking instance
@@ -261,12 +333,14 @@ def reassign_to_next_worker(booking, exclude_worker_ids=None):
     if exclude_worker_ids is None:
         exclude_worker_ids = set()
 
+    old_worker_name = booking.worker.get_full_name() if booking.worker else "Previous Saarthi"
+
     # Get all candidates, excluding previously rejected/timed-out workers
     all_candidates = find_nearby_workers(booking, max_results=20)
     filtered = [c for c in all_candidates if c['worker'].id not in exclude_worker_ids]
 
     if not filtered:
-        # No more candidates — try expanding the radius
+        # No more candidates — return to pending pool
         booking.status = 'pending'
         booking.worker = None
         booking.save(update_fields=['status', 'worker', 'updated_at'])
@@ -274,13 +348,13 @@ def reassign_to_next_worker(booking, exclude_worker_ids=None):
         BookingStatusHistory.objects.create(
             booking=booking,
             status='pending',
-            notes='No more workers available — returned to pending pool'
+            notes=f'{old_worker_name} passed — returned to open pending pool'
         )
 
         Notification.objects.create(
             user=booking.customer,
-            title='Searching for Workers',
-            message='All nearby workers are busy. We are expanding the search radius.',
+            title='Searching for Next Saarthi',
+            message=f'{old_worker_name} was unavailable. We are expanding our search to find another nearby Saarthi.',
             notification_type='booking_request',
             related_booking=booking,
         )
@@ -305,18 +379,27 @@ def reassign_to_next_worker(booking, exclude_worker_ids=None):
     BookingStatusHistory.objects.create(
         booking=booking,
         status='matched',
-        notes=f"Re-assigned to {worker.get_full_name()} after rejection/timeout"
+        notes=f"{old_worker_name} passed — re-dispatched to {worker.get_full_name()} ({best['distance_km']}km away)"
     )
 
-    # Notify
+    # Notify next worker
     Notification.objects.create(
         user=worker,
-        title=f'New Job Request: {booking.service_category.name}',
+        title=f'New Job Offer: {booking.service_category.name}',
         message=(
             f"A customer needs {booking.service_category.name} at {booking.address_text}. "
             f"Scheduled: {booking.scheduled_datetime.strftime('%d %b, %I:%M %p')}. "
-            f"Distance: {best['distance_km']}km."
+            f"Distance: {best['distance_km']}km. Accept or pass within {get_accept_timeout(booking)//60} mins."
         ),
+        notification_type='booking_request',
+        related_booking=booking,
+    )
+
+    # Notify customer
+    Notification.objects.create(
+        user=booking.customer,
+        title='Dispatched to Next Saarthi',
+        message=f'Offer dispatched to {worker.get_full_name()} ({best["distance_km"]}km away). Waiting for confirmation.',
         notification_type='booking_request',
         related_booking=booking,
     )

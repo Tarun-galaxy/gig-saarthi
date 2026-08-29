@@ -5,6 +5,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from core.views import health_check
 
 
 urlpatterns = [
@@ -21,6 +22,10 @@ urlpatterns = [
     path('ratings/', include('ratings.urls')),
     path('notifications/', include('notifications.urls')),
     path('coop-admin/', include('cooperative_admin.urls')),
+
+    # Health check for UptimeRobot / Render keep-alive
+    path('health/', health_check, name='health_check'),
+    path('healthz/', health_check, name='healthz_check'),
 
     # DRF API
     path('api/', include('core.api_urls')),

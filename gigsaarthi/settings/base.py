@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # Security
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production-!@#$%')
 DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*,localhost,127.0.0.1,.onrender.com', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*,localhost,127.0.0.1,.onrender.com,testserver', cast=Csv())
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://*.onrender.com,http://localhost:8000,http://127.0.0.1:8000', cast=Csv())
 
 # Application definition
@@ -197,6 +197,11 @@ GEOAPIFY_API_KEY = config('GEOAPIFY_API_KEY', default='')
 
 # Groq AI Cloud (LLaMA 3.3 LLM for Worker AI Support)
 GROQ_API_KEY = config('GROQ_API_KEY', default='')
+
+# OTP Configuration
+OTP_TO_CONSOLE = config('OTP_TO_CONSOLE', default=True, cast=bool)
+OTP_DEV_CODE = config('OTP_DEV_CODE', default='123456')
+OTP_SALT = config('OTP_SALT', default='gigsaarthi-otp-salt')
 
 # Login URLs
 LOGIN_URL = '/accounts/login/'

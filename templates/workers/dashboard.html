@@ -76,11 +76,18 @@
                             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">#{{ b.pk }} &middot; {{ b.created_at|timesince }} {% trans "ago" %}</p>
                         </div>
                     </div>
-                    {% if b.is_emergency %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 ring-1 ring-rose-500/20 animate-pulse">
-                        🚨 {% trans "URGENT" %}
-                    </span>
-                    {% endif %}
+                    <div class="flex items-center space-x-2">
+                        {% if item.is_broadcast %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                            ⚡ {% trans "Flash Nearby" %}
+                        </span>
+                        {% endif %}
+                        {% if b.is_emergency %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 ring-1 ring-rose-500/20 animate-pulse">
+                            🚨 {% trans "URGENT" %}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <!-- Customer Details & Distance Box -->
@@ -141,17 +148,68 @@
                         {% csrf_token %}
                         <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3 rounded-xl font-black text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center space-x-1.5 cursor-pointer">
                             <span>✓</span>
-                            <span>{% trans "Accept Job" %}</span>
+                            <span>{% if item.is_broadcast %}{% trans "Claim & Accept" %}{% else %}{% trans "Accept Job" %}{% endif %}</span>
                         </button>
                     </form>
                     <form method="post" action="{% url 'bookings:reject' booking_id=b.pk %}" class="w-full">
                         {% csrf_token %}
-                        <button type="submit" class="w-full bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 text-slate-700 hover:text-rose-700 dark:text-slate-100 dark:hover:text-rose-300 py-3 rounded-xl font-extrabold text-sm shadow-xs transition-all active:scale-[0.98] flex items-center justify-center space-x-1.5 cursor-pointer">
+                        <button type="submit" class="w-full bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950/60 border border-slate-200 dark:border-slate-700 hover:border-rose-300 dark:hover:border-rose-800 text-slate-700 hover:text-rose-700 dark:text-slate-100 dark:hover:text-rose-300 py-3 rounded-xl font-extrabold text-sm shadow-xs transition-all active:scale-[0.98] flex items-center justify-center space-x-1.5 cursor-pointer"
+                            onclick="return confirm('{% trans "Pass on this job? It will be removed from your feed." %}')">
                             <span class="text-rose-500 text-base">✕</span>
                             <span>{% trans "Pass" %}</span>
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!--  OPEN OPPORTUNITIES (Nearby Unassigned Pool) -->
+    <!-- ═══════════════════════════════════════════ -->
+    {% if open_pool_gigs %}
+    <div class="mb-7">
+        <div class="flex items-center justify-between mb-3 px-1">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <span class="text-base">📍</span>
+                <span>{% trans "Available Gigs in Your Area" %}</span>
+            </h2>
+            <span class="bg-indigo-50 text-indigo-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-200">{{ open_pool_gigs|length }}</span>
+        </div>
+
+        {% for item in open_pool_gigs %}
+        {% with b=item.booking route=item.route %}
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-subtle border border-indigo-200/80 dark:border-indigo-900/60 mb-3.5 p-4 transition-all hover:shadow-md">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-100 dark:border-indigo-800">{{ b.service_category.icon }}</span>
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 dark:text-white text-sm leading-tight">{{ b.service_category.name }}</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">#{{ b.pk }} &middot; {{ b.address_text|truncatechars:35 }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">₹{{ b.estimated_price|floatformat:0 }}</span>
+                    {% if route %}
+                    <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">{{ route.distance_km }} km away</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                <span class="text-[11px] text-slate-500 flex items-center space-x-1 font-medium">
+                    <span>🕐</span>
+                    <span>{{ b.scheduled_datetime|date:"d M, g:i A" }}</span>
+                </span>
+                <form method="post" action="{% url 'bookings:accept' booking_id=b.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm active:scale-95 transition-all">
+                        {% trans "Claim & Accept Gig" %} →
+                    </button>
+                </form>
             </div>
         </div>
         {% endwith %}

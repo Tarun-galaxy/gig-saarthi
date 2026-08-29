@@ -102,19 +102,31 @@
 
         <!-- Accept Countdown (for matched bookings) -->
         {% if booking.status == 'matched' and accept_time_remaining %}
-        <div class="mb-6 p-4 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl" id="accept-countdown"
+        <div class="mb-6 p-4.5 bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800/80 rounded-2xl shadow-subtle" id="accept-countdown"
             x-data="countdown({{ accept_time_remaining|floatformat:0 }})" x-init="startTimer()">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                    <span class="text-xl">⏳</span>
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl animate-pulse">⏳</span>
                     <div>
-                        <p class="font-bold text-xs text-amber-900 dark:text-amber-200">{% trans "Awaiting worker confirmation" %}</p>
-                        <p class="text-[11px] text-amber-700 dark:text-amber-400">{% trans "Worker will accept within the countdown limit" %}</p>
+                        <p class="font-extrabold text-xs text-amber-900 dark:text-amber-200">
+                            {% if user == booking.worker %}
+                            {% trans "Incoming Job Offer — Accept or Pass" %}
+                            {% else %}
+                            {% trans "Offer Dispatched — Awaiting Saarthi's Decision" %}
+                            {% endif %}
+                        </p>
+                        <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                            {% if user == booking.worker %}
+                            {% trans "Please accept this gig or pass to let the next nearby Saarthi take it." %}
+                            {% else %}
+                            {% trans "The Saarthi has been sent this offer. If they pass, our engine auto-dispatches to the next nearby pro." %}
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
-                <div class="text-xl font-extrabold text-amber-800 dark:text-amber-300 font-mono" x-text="timeDisplay"></div>
+                <div class="text-xl font-black text-amber-800 dark:text-amber-300 font-mono bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800" x-text="timeDisplay"></div>
             </div>
-            <div class="mt-3 bg-amber-200 dark:bg-amber-900/60 rounded-full h-1.5 overflow-hidden">
+            <div class="mt-3.5 bg-amber-200 dark:bg-amber-900/60 rounded-full h-1.5 overflow-hidden">
                 <div class="bg-amber-600 dark:bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
                     :style="`width: ${percent}%`"></div>
             </div>
@@ -128,8 +140,8 @@
                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
                     <i data-lucide="hard-hat" class="w-3.5 h-3.5 text-primary-500"></i>
                     <span>
-                        {% if booking.status == 'matched' %}{% trans "Matched Saarthi" %}
-                        {% elif booking.status == 'accepted' %}{% trans "Assigned Saarthi" %}
+                        {% if booking.status == 'matched' %}{% trans "Offered to Saarthi" %}
+                        {% elif booking.status == 'accepted' %}{% trans "Confirmed Saarthi" %}
                         {% elif booking.status == 'in_progress' %}{% trans "Working On Site" %}
                         {% elif booking.status == 'completed' %}{% trans "Completed By" %}
                         {% else %}{% trans "Assigned Saarthi" %}{% endif %}
@@ -155,9 +167,14 @@
                         </p>
                     </div>
                 </div>
+                {% if booking.status == 'matched' %}
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 animate-pulse">
+                    {% trans "Pending Acceptance" %}
+                </span>
+                {% endif %}
             </div>
 
-            {% if booking.status in 'accepted,in_progress,matched' and user == booking.customer %}
+            {% if booking.status in 'accepted,in_progress' and user == booking.customer %}
             <a href="{% url 'bookings:tracking' pk=booking.pk %}"
                class="mt-4 w-full flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition active:scale-[0.99]">
                 <i data-lucide="map-pin" class="w-4 h-4"></i>
@@ -169,28 +186,28 @@
 
         <!-- Matching Stats (for pending bookings) -->
         {% if matching_stats and matching_stats.total_candidates > 0 %}
-        <div class="mb-6 p-4 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 rounded-2xl">
-            <h3 class="font-bold text-xs text-indigo-900 dark:text-indigo-200 mb-1 flex items-center space-x-2">
-                <i data-lucide="radar" class="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin"></i>
-                <span>{% trans "Auto-Matching Radar Active" %}</span>
+        <div class="mb-6 p-4.5 bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 rounded-2xl shadow-subtle">
+            <h3 class="font-extrabold text-xs text-indigo-900 dark:text-indigo-200 mb-1 flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping"></span>
+                <span>{% trans "Flash Broadcast Dispatch Active" %}</span>
             </h3>
             <p class="text-xs text-indigo-700 dark:text-indigo-300 mb-3">
-                {% trans "Scanning" %} <span class="font-bold">{{ matching_stats.total_candidates }}</span> {% trans "verified pros within" %}
-                <span class="font-bold">{{ matching_stats.search_radius_km }}km</span>
+                {% trans "Alerting" %} <span class="font-black text-indigo-950 dark:text-white">{{ matching_stats.total_candidates }}</span> {% trans "verified Saarthis within" %}
+                <span class="font-black text-indigo-950 dark:text-white">{{ matching_stats.search_radius_km }}km</span>. {% trans "Awaiting first Saarthi to claim." %}
             </p>
             <div class="space-y-2 bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/60">
                 {% for candidate in matching_stats.top_candidates %}
                 <div class="flex items-center justify-between text-xs">
                     <span class="font-bold text-slate-800 dark:text-slate-200">{{ candidate.name }}</span>
-                    <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px]">{{ candidate.distance_km }}km · <span class="text-amber-500 font-bold">★ {{ candidate.rating|floatformat:1 }}</span></span>
+                    <span class="text-slate-500 dark:text-slate-400 font-mono text-[11px]">{{ candidate.distance_km }}km away · <span class="text-amber-500 font-bold">★ {{ candidate.rating|floatformat:1 }}</span></span>
                 </div>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
 
-        <!-- Live Route Navigation Assistance HUD -->
-        {% if route_info and booking.worker and booking.latitude %}
+        <!-- Live Route Navigation Assistance HUD (Shown once Accepted or In Progress) -->
+        {% if route_info and booking.worker and booking.latitude and booking.status in 'accepted,in_progress' %}
         <div class="mb-6 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-card bg-white dark:bg-slate-900 isolate">
             <!-- Header -->
             <div class="p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
@@ -354,8 +371,8 @@
             <form method="post" action="{% url 'bookings:reject' booking_id=booking.pk %}" class="flex-1">
                 {% csrf_token %}
                 <button type="submit" class="w-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-5 py-3 rounded-xl font-bold text-xs transition active:scale-[0.98]"
-                    onclick="return confirm('{% trans "Are you sure you want to reject this job?" %}')">
-                    ✗ {% trans "Decline" %}
+                    onclick="return confirm('{% trans "Pass on this offer? It will be re-routed to the next available Saarthi." %}')">
+                    ⮌ {% trans "Pass Offer" %}
                 </button>
             </form>
             {% endif %}
@@ -453,7 +470,8 @@
             })
             .catch(() => {});
     }
-    setInterval(pollStatus, 10000);
+    // Poll every 3 seconds for instant response when a worker claims
+    setInterval(pollStatus, 3000);
 </script>
 {% endif %}
 

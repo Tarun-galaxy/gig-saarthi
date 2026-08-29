@@ -108,27 +108,16 @@ def booking_create(request):
             notes='Booking created'
         )
 
-        # Matching is triggered automatically by the post_save signal
-        # For emergency bookings, try to match synchronously for faster response
+        # Matching is triggered automatically by the post_save signal (broadcasts to all nearby qualified workers)
         if is_emergency:
-            result = find_and_assign_worker(booking)
-            if result['success']:
-                messages.success(
-                    request,
-                    f'Emergency booking #{booking.pk} matched to '
-                    f'{result["worker"].get_full_name()}! '
-                    f'({result["message"]})'
-                )
-            else:
-                messages.warning(
-                    request,
-                    f'Emergency booking #{booking.pk} created. '
-                    f'Searching for available workers...'
-                )
+            messages.success(
+                request,
+                f'🚨 Emergency booking #{booking.pk} created! Flash broadcast sent to all verified nearby Saarthis.'
+            )
         else:
             messages.success(
                 request,
-                f'Booking #{booking.pk} created! We are finding the best worker for you.'
+                f'Booking #{booking.pk} created! Broadcast sent to verified nearby Saarthis.'
             )
 
         return redirect('bookings:detail', pk=booking.pk)
@@ -297,71 +286,118 @@ def booking_update_status(request, pk):
 
 @login_required
 def booking_accept(request, booking_id):
-    """Worker accepts a matched booking."""
-    booking = get_object_or_404(Booking, pk=booking_id)
+    """Worker accepts a matched or broadcast pending booking."""
+    from django.db import transaction
 
-    if request.user != booking.worker:
-        messages.error(request, 'This booking is not assigned to you.')
-        return redirect('bookings:list')
+    if request.user.role != 'worker':
+        messages.error(request, 'Only workers can accept jobs.')
+        return redirect('core:dashboard')
 
-    if booking.status != 'matched':
-        messages.error(request, 'This booking is not in a state that can be accepted.')
-        return redirect('bookings:detail', pk=booking_id)
+    with transaction.atomic():
+        try:
+            booking = Booking.objects.select_for_update().get(pk=booking_id)
+        except Booking.DoesNotExist:
+            messages.error(request, 'Booking not found.')
+            return redirect('workers:dashboard')
 
-    booking.status = 'accepted'
-    booking.accepted_at = timezone.now()
-    booking.save()
+        # Check if booking is still available
+        if booking.status not in ('matched', 'pending'):
+            messages.warning(request, f'Job #{booking.pk} has already been claimed by another Saarthi!')
+            return redirect('workers:dashboard')
 
-    # Notify customer
-    Notification.objects.create(
-        user=booking.customer,
-        title='Worker Accepted Your Booking!',
-        message=(
-            f'{booking.worker.get_full_name()} has accepted your '
-            f'{booking.service_category.name} booking. '
-            f'Scheduled for {booking.scheduled_datetime.strftime("%d %b, %I:%M %p")}.'
-        ),
-        notification_type='booking_accepted',
-        related_booking=booking,
-    )
+        if booking.status == 'matched' and booking.worker and booking.worker != request.user:
+            messages.warning(request, f'Job #{booking.pk} was assigned to another Saarthi.')
+            return redirect('workers:dashboard')
 
-    messages.success(request, 'Booking accepted! You can start when ready.')
+        booking.worker = request.user
+        booking.status = 'accepted'
+        booking.accepted_at = timezone.now()
+        booking.save(update_fields=['worker', 'status', 'accepted_at', 'updated_at'])
+
+        # Log status change
+        BookingStatusHistory.objects.create(
+            booking=booking,
+            status='accepted',
+            changed_by=request.user,
+            notes=f"Claimed & accepted by {request.user.get_full_name()}"
+        )
+
+        # Mark notification for this worker as read
+        Notification.objects.filter(
+            related_booking=booking,
+            user=request.user,
+            is_read=False
+        ).update(is_read=True)
+
+        # Notify customer
+        Notification.objects.create(
+            user=booking.customer,
+            title='Saarthi Confirmed & En Route!',
+            message=(
+                f'{request.user.get_full_name()} has accepted your '
+                f'{booking.service_category.name} booking! '
+                f'Scheduled for {booking.scheduled_datetime.strftime("%d %b, %I:%M %p")}.'
+            ),
+            notification_type='booking_accepted',
+            related_booking=booking,
+        )
+
+    messages.success(request, f'✓ You have claimed Job #{booking.pk}! You are now confirmed.')
+    
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'dashboard' in referer:
+        return redirect('workers:dashboard')
     return redirect('bookings:detail', pk=booking_id)
 
 
 @login_required
 def booking_reject(request, booking_id):
-    """Worker rejects a matched booking — auto-reassign to next worker."""
+    """Worker passes on a booking — dismisses for this worker and reassigns if direct offer."""
     booking = get_object_or_404(Booking, pk=booking_id)
 
-    if request.user != booking.worker:
-        messages.error(request, 'This booking is not assigned to you.')
-        return redirect('bookings:list')
+    if request.user.role != 'worker':
+        messages.error(request, 'Only workers can pass on jobs.')
+        return redirect('core:dashboard')
 
-    if booking.status != 'matched':
-        messages.error(request, 'This booking cannot be rejected in its current state.')
-        return redirect('bookings:detail', pk=booking_id)
+    if booking.status not in ('matched', 'pending'):
+        messages.error(request, 'This booking cannot be passed in its current state.')
+        return redirect('workers:dashboard')
 
     if request.method == 'POST':
-        excluded_ids = [request.user.id]
-
-        # Try to reassign to next worker
-        result = reassign_to_next_worker(booking, set(excluded_ids))
-
-        if result['success']:
-            messages.info(
-                request,
-                f'Booking reassigned to {result["worker"].get_full_name()}.'
-            )
+        # If this was a direct matched offer
+        if booking.status == 'matched' and booking.worker == request.user:
+            excluded_ids = [request.user.id]
+            result = reassign_to_next_worker(booking, set(excluded_ids))
+            if result['success']:
+                messages.info(
+                    request,
+                    f'Job #{booking.pk} passed. Offer re-routed to {result["worker"].get_full_name()}.'
+                )
+            else:
+                messages.info(request, f'Job #{booking.pk} passed. Returned to open matching pool.')
         else:
-            messages.info(request, 'Booking returned to the matching pool.')
+            # Broadcast mode pass: record that this worker passed
+            BookingStatusHistory.objects.create(
+                booking=booking,
+                status='pending',
+                changed_by=request.user,
+                notes=f"{request.user.get_full_name()} passed on offer"
+            )
+            Notification.objects.filter(
+                related_booking=booking,
+                user=request.user
+            ).update(is_read=True)
+            messages.info(request, f'Job #{booking.pk} passed and dismissed from your feed.')
 
-    return redirect('bookings:list')
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'bookings/' in referer and 'dashboard' not in referer:
+        return redirect('bookings:list')
+    return redirect('workers:dashboard')
 
 
 @login_required
 def booking_match_status(request, pk):
-    """AJAX endpoint to get live matching status for a booking."""
+    """AJAX endpoint to get live matching and broadcast status for a booking."""
     booking = get_object_or_404(Booking, pk=pk)
 
     # Access control
@@ -386,6 +422,12 @@ def booking_match_status(request, pk):
         deadline = booking.matched_at + timezone.timedelta(seconds=timeout)
         remaining = max(0, (deadline - timezone.now()).total_seconds())
         data['accept_timeout_seconds'] = remaining
+
+    # Add broadcast candidate count if pending
+    if booking.status == 'pending':
+        from core.services.matching import find_nearby_workers
+        candidates = find_nearby_workers(booking, max_results=10)
+        data['broadcast_count'] = len(candidates)
 
     return JsonResponse(data)
 

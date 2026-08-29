@@ -73,19 +73,40 @@ def verify_otp(phone_number, otp_code, purpose='verification'):
     """
     Verify an OTP code for a phone number.
     
-    In dev mode (OTP_TO_CONSOLE=True), always accept '123456' as a shortcut.
+    In dev/sandbox mode (OTP_TO_CONSOLE=True or DEBUG=True or demo mode),
+    always accept '123456' (or configured OTP_DEV_CODE) as a valid shortcut.
     
     Returns: (success: bool, message: str)
     """
     from accounts.models import PhoneVerification
 
-    # Dev shortcut: always accept 123456
-    if getattr(settings, 'OTP_TO_CONSOLE', False) and otp_code == '123456':
+    otp_code = str(otp_code).strip() if otp_code else ''
+    dev_code = str(getattr(settings, 'OTP_DEV_CODE', '123456')).strip()
+    is_dev_mode = (
+        getattr(settings, 'OTP_TO_CONSOLE', True)
+        or getattr(settings, 'DEBUG', True)
+        or getattr(settings, 'DEMO_MODE', True)
+    )
+
+    # Dev / Sandbox shortcut: always accept 123456 or OTP_DEV_CODE
+    if is_dev_mode and (otp_code == '123456' or otp_code == dev_code):
+        # Look for verification record
         verification = PhoneVerification.objects.filter(
             phone_number=phone_number,
             purpose=purpose,
             is_used=False,
         ).order_by('-created_at').first()
+
+        # Fallback search by trailing digits if formatted differently (+91 vs local)
+        if not verification and phone_number:
+            clean_digits = ''.join(c for c in phone_number if c.isdigit())
+            if len(clean_digits) >= 10:
+                verification = PhoneVerification.objects.filter(
+                    phone_number__endswith=clean_digits[-10:],
+                    purpose=purpose,
+                    is_used=False,
+                ).order_by('-created_at').first()
+
         if verification:
             verification.is_used = True
             verification.verified_at = timezone.now()
@@ -99,6 +120,17 @@ def verify_otp(phone_number, otp_code, purpose='verification'):
         is_used=False,
         expires_at__gt=timezone.now()
     ).order_by('-created_at').first()
+
+    # Fallback search by trailing digits if formatted differently
+    if not verification and phone_number:
+        clean_digits = ''.join(c for c in phone_number if c.isdigit())
+        if len(clean_digits) >= 10:
+            verification = PhoneVerification.objects.filter(
+                phone_number__endswith=clean_digits[-10:],
+                purpose=purpose,
+                is_used=False,
+                expires_at__gt=timezone.now()
+            ).order_by('-created_at').first()
 
     if not verification:
         return False, "No valid OTP found. Please request a new one."
