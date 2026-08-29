@@ -320,21 +320,28 @@
     {% endif %}
 
     <!-- Account Actions Grid -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6">
         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">{% trans "Quick Actions" %}</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <a href="{% url 'accounts:profile_edit' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 rounded-xl border border-slate-200/60 font-bold text-slate-700 transition">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <a href="{% url 'accounts:profile_edit' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl border border-slate-200/60 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 transition">
                 <span>✏️</span>
                 <span>{% trans "Edit Profile" %}</span>
             </a>
-            <a href="{% url 'accounts:change_password' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 rounded-xl border border-slate-200/60 font-bold text-slate-700 transition">
+            <a href="{% url 'accounts:change_password' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl border border-slate-200/60 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 transition">
                 <span>🔒</span>
                 <span>{% trans "Change Password" %}</span>
             </a>
-            <a href="{% url 'core:dashboard' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 rounded-xl border border-slate-200/60 font-bold text-slate-700 transition">
+            <a href="{% url 'core:dashboard' %}" class="flex items-center space-x-2 p-3 bg-surface-50 hover:bg-surface-100 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl border border-slate-200/60 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 transition">
                 <span>📊</span>
                 <span>{% trans "Go to Dashboard" %}</span>
             </a>
+            <form method="post" action="{% url 'accounts:logout' %}" class="w-full">
+                {% csrf_token %}
+                <button type="submit" class="w-full flex items-center space-x-2 p-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 rounded-xl border border-rose-200 dark:border-rose-800/60 font-bold text-rose-600 dark:text-rose-400 transition cursor-pointer">
+                    <span>🚪</span>
+                    <span>{% trans "Sign Out" %}</span>
+                </button>
+            </form>
         </div>
     </div>
 </div>

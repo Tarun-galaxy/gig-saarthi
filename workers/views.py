@@ -396,3 +396,154 @@ def worker_ai_chat_api(request):
     except Exception as e:
         return JsonResponse({'error': str(e), 'status': 'error'}, status=500)
 
+
+@login_required
+def worker_earnings(request):
+    """
+    Worker Earnings & Monthly Income Dashboard.
+    Provides full monthly breakdown, cooperative fee deduction (5%),
+    and payout ledger.
+    """
+    if request.user.role != 'worker':
+        messages.info(request, 'Earnings overview is available for registered Saarthis.')
+        return redirect('core:dashboard')
+
+    try:
+        profile = request.user.worker_profile
+    except WorkerProfile.DoesNotExist:
+        return redirect('workers:onboarding')
+
+    from bookings.models import Booking
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.db.models import Sum, Count, Q
+
+    now = timezone.now()
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # 1. This Month Stats
+    this_month_bookings = Booking.objects.filter(
+        worker=request.user,
+        status='completed',
+    ).filter(
+        Q(completed_at__gte=this_month_start) | Q(completed_at__isnull=True, created_at__gte=this_month_start)
+    )
+    this_month_jobs_count = this_month_bookings.count()
+    this_month_gross = float(this_month_bookings.aggregate(s=Sum('final_price'))['s'] or 0)
+    if this_month_gross == 0 and this_month_jobs_count > 0:
+        this_month_gross = float(this_month_bookings.aggregate(s=Sum('estimated_price'))['s'] or 0)
+
+    coop_fee_rate = 0.05
+    this_month_coop_fee = round(this_month_gross * coop_fee_rate, 2)
+    this_month_net = round(this_month_gross - this_month_coop_fee, 2)
+
+    # 2. Previous Month Stats (for comparison)
+    last_month_end = this_month_start - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_bookings = Booking.objects.filter(
+        worker=request.user,
+        status='completed',
+    ).filter(
+        Q(completed_at__range=(last_month_start, last_month_end)) | 
+        Q(completed_at__isnull=True, created_at__range=(last_month_start, last_month_end))
+    )
+    last_month_gross = float(last_month_bookings.aggregate(s=Sum('final_price'))['s'] or 0)
+    if last_month_gross == 0 and last_month_bookings.count() > 0:
+        last_month_gross = float(last_month_bookings.aggregate(s=Sum('estimated_price'))['s'] or 0)
+    last_month_net = round(last_month_gross * 0.95, 2)
+
+    # Growth %
+    growth_pct = None
+    if last_month_net > 0:
+        growth_pct = round(((this_month_net - last_month_net) / last_month_net) * 100, 1)
+
+    # 3. Lifetime Stats
+    all_completed = Booking.objects.filter(
+        worker=request.user,
+        status='completed',
+    ).select_related('customer', 'service_category').order_by('-completed_at', '-created_at')
+
+    lifetime_jobs_count = all_completed.count()
+    lifetime_gross = float(all_completed.aggregate(s=Sum('final_price'))['s'] or 0)
+    if lifetime_gross == 0 and lifetime_jobs_count > 0:
+        lifetime_gross = float(all_completed.aggregate(s=Sum('estimated_price'))['s'] or 0)
+    lifetime_coop_fee = round(lifetime_gross * coop_fee_rate, 2)
+    lifetime_net = round(lifetime_gross - lifetime_coop_fee, 2)
+
+    # 4. Past 6 Months Breakdown
+    monthly_breakdown = []
+    curr = this_month_start
+    for i in range(6):
+        m_start = curr
+        if curr.month == 12:
+            m_next = curr.replace(year=curr.year + 1, month=1)
+        else:
+            m_next = curr.replace(month=curr.month + 1)
+        m_end = m_next - timedelta(seconds=1)
+
+        m_b = Booking.objects.filter(
+            worker=request.user,
+            status='completed',
+        ).filter(
+            Q(completed_at__range=(m_start, m_end)) |
+            Q(completed_at__isnull=True, created_at__range=(m_start, m_end))
+        )
+        count = m_b.count()
+        gross = float(m_b.aggregate(s=Sum('final_price'))['s'] or 0)
+        if gross == 0 and count > 0:
+            gross = float(m_b.aggregate(s=Sum('estimated_price'))['s'] or 0)
+        net = round(gross * 0.95, 2)
+        fee = round(gross * 0.05, 2)
+
+        monthly_breakdown.append({
+            'month_label': m_start.strftime('%B %Y'),
+            'month_short': m_start.strftime('%b %Y'),
+            'jobs_count': count,
+            'gross': gross,
+            'coop_fee': fee,
+            'net': net,
+            'is_current': (i == 0),
+        })
+
+        curr = (m_start - timedelta(days=1)).replace(day=1)
+
+    # 5. Recent Completed Bookings with payout breakdown
+    recent_bookings = []
+    for b in all_completed[:15]:
+        b_gross = float(b.final_price or b.estimated_price or 0)
+        b_fee = round(b_gross * coop_fee_rate, 2)
+        b_net = round(b_gross - b_fee, 2)
+        recent_bookings.append({
+            'booking': b,
+            'gross': b_gross,
+            'fee': b_fee,
+            'net': b_net,
+            'date': b.completed_at or b.created_at,
+        })
+
+    # Bank account masked
+    masked_account = ''
+    if profile.bank_account_number:
+        acc = str(profile.bank_account_number)
+        masked_account = '•••• •••• ' + acc[-4:] if len(acc) >= 4 else acc
+
+    context = {
+        'profile': profile,
+        'this_month_gross': this_month_gross,
+        'this_month_net': this_month_net,
+        'this_month_coop_fee': this_month_coop_fee,
+        'this_month_jobs_count': this_month_jobs_count,
+        'last_month_net': last_month_net,
+        'growth_pct': growth_pct,
+        'lifetime_gross': lifetime_gross,
+        'lifetime_net': lifetime_net,
+        'lifetime_coop_fee': lifetime_coop_fee,
+        'lifetime_jobs_count': lifetime_jobs_count,
+        'monthly_breakdown': monthly_breakdown,
+        'recent_bookings': recent_bookings,
+        'masked_account': masked_account,
+        'now': now,
+    }
+    return render(request, 'workers/earnings.html', context)
+
+

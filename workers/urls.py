@@ -11,5 +11,6 @@ urlpatterns = [
     path('onboarding/', views.worker_onboarding, name='onboarding'),
     path('<int:pk>/', views.worker_detail, name='detail'),
     path('me/', views.my_profile, name='my_profile'),
+    path('earnings/', views.worker_earnings, name='earnings'),
     path('api/ai-chat/', views.worker_ai_chat_api, name='ai_chat_api'),
 ]

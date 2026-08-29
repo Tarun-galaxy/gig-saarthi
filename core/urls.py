@@ -9,6 +9,8 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('set-language/', views.set_language, name='set_language'),
+    path('support/', views.support, name='support'),
+    path('contact/', views.support, name='contact'),
 
     # Geoapify API endpoints
     path('api/autocomplete/', api_views.api_autocomplete, name='api_autocomplete'),

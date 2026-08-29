@@ -105,3 +105,86 @@ def health_check(request):
 
 # Need to import settings for LANGUAGES
 from django.conf import settings
+
+
+def support(request):
+    """
+    Complaint, Support & Grievance Redressal view.
+    Allows workers and customers to file complaints/disputes and view
+    cooperative contact officers & emergency numbers.
+    """
+    from django.contrib import messages
+    import random
+    from notifications.models import Notification
+
+    ticket_submitted = None
+    ticket_id = None
+
+    worker_profile = None
+    if request.user.is_authenticated and hasattr(request.user, 'worker_profile'):
+        worker_profile = request.user.worker_profile
+
+    # Recent bookings for quick linkage in dispute form
+    recent_bookings = []
+    if request.user.is_authenticated:
+        from bookings.models import Booking
+        if getattr(request.user, 'role', '') == 'worker':
+            recent_bookings = Booking.objects.filter(worker=request.user).select_related('service_category').order_by('-created_at')[:8]
+        else:
+            recent_bookings = Booking.objects.filter(customer=request.user).select_related('service_category').order_by('-created_at')[:8]
+
+    if request.method == 'POST':
+        category = request.POST.get('category', 'other')
+        subject = request.POST.get('subject', '').strip()
+        description = request.POST.get('description', '').strip()
+        priority = request.POST.get('priority', 'normal')
+        booking_id = request.POST.get('booking_id')
+        contact_phone = request.POST.get('phone', '')
+
+        if not subject or not description:
+            messages.error(request, 'Please provide both a subject and details for your complaint.')
+        else:
+            ticket_id = f"GS-GRV-{random.randint(10000, 99999)}"
+            ticket_submitted = {
+                'id': ticket_id,
+                'category': category,
+                'subject': subject,
+                'priority': priority,
+            }
+
+            # Create in-app notification if user is logged in
+            if request.user.is_authenticated:
+                rel_booking = None
+                if booking_id:
+                    from bookings.models import Booking
+                    rel_booking = Booking.objects.filter(pk=booking_id).first()
+
+                Notification.objects.create(
+                    user=request.user,
+                    title=f"Grievance Ticket #{ticket_id} Logged",
+                    message=(
+                        f"Your complaint regarding '{subject}' ({category.replace('_', ' ').title()}) "
+                        f"has been submitted under ticket #{ticket_id}. "
+                        "Our Cooperative Grievance Officer will review this within 24 hours."
+                    ),
+                    notification_type='system',
+                    related_booking=rel_booking,
+                )
+
+            messages.success(
+                request,
+                f"Complaint registered successfully! Reference Ticket: #{ticket_id}. "
+                "Our cooperative grievance team will review and contact you within 24 hours."
+            )
+
+    selected_category = request.GET.get('category', '')
+
+    context = {
+        'worker_profile': worker_profile,
+        'recent_bookings': recent_bookings,
+        'ticket_submitted': ticket_submitted,
+        'ticket_id': ticket_id,
+        'selected_category': selected_category,
+    }
+    return render(request, 'core/support.html', context)
+

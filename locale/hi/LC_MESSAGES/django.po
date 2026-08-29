@@ -511,3 +511,25 @@ msgstr "आस-पास के सेवा अनुरोध"
 msgid "Accept Service Request"
 msgstr "सेवा अनुरोध स्वीकार करें"
 
+msgid "My Earnings"
+msgstr "मेरी कमाई"
+
+msgid "Complaint / Contact"
+msgstr "शिकायत / संपर्क"
+
+msgid "My Earnings & Monthly Income"
+msgstr "मेरी कमाई और मासिक आय"
+
+msgid "Complaint & Support Center"
+msgstr "शिकायत और सहायता केंद्र"
+
+msgid "Submit a Complaint or Grievance"
+msgstr "शिकायत या समस्या दर्ज करें"
+
+msgid "This Month Net Income"
+msgstr "इस महीने की शुद्ध आय"
+
+msgid "Next Payout Cycle:"
+msgstr "अगला भुगतान चक्र:"
+
+
