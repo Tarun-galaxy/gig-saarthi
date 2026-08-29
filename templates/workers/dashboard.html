@@ -175,7 +175,7 @@
         <div class="flex items-center justify-between mb-3 px-1">
             <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
                 <span class="text-base">📍</span>
-                <span>{% trans "Available Gigs in Your Area" %}</span>
+                <span>{% trans "Nearby Service Requests" %}</span>
             </h2>
             <span class="bg-indigo-50 text-indigo-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-200">{{ open_pool_gigs|length }}</span>
         </div>
@@ -207,7 +207,7 @@
                 <form method="post" action="{% url 'bookings:accept' booking_id=b.pk %}">
                     {% csrf_token %}
                     <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold shadow-sm active:scale-95 transition-all">
-                        {% trans "Claim & Accept Gig" %} →
+                        {% trans "Accept Service Request" %} →
                     </button>
                 </form>
             </div>

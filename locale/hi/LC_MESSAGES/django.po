@@ -504,3 +504,10 @@ msgstr "द्वारा संचालित"
 
 msgid "Gig Saarthi Team"
 msgstr "गिग सारथी टीम"
+
+msgid "Nearby Service Requests"
+msgstr "आस-पास के सेवा अनुरोध"
+
+msgid "Accept Service Request"
+msgstr "सेवा अनुरोध स्वीकार करें"
+
