@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -62,7 +63,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
+        'APP_DIRS': True if DEBUG else False,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -72,6 +73,15 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'core.context_processors.mapbox_token',
             ],
+            # Cache compiled templates in production for faster rendering
+            **({} if DEBUG else {
+                'loaders': [
+                    ('django.template.loaders.cached.Loader', [
+                        'django.template.loaders.filesystem.Loader',
+                        'django.template.loaders.app_directories.Loader',
+                    ]),
+                ],
+            }),
         },
     },
 ]
@@ -96,7 +106,7 @@ if database_url:
     import dj_database_url
     # For serverless / pooled Postgres (Neon), conn_health_checks ensures
     # closed idle or scaled-to-zero connections are automatically re-opened.
-    conn_max_age = config('CONN_MAX_AGE', default=60, cast=int)
+    conn_max_age = config('CONN_MAX_AGE', default=600, cast=int)
     DATABASES['default'] = dj_database_url.parse(
         database_url,
         conn_max_age=conn_max_age,

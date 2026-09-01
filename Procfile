@@ -1,1 +1,1 @@
-web: gunicorn gigsaarthi.wsgi:application
+web: gunicorn gigsaarthi.wsgi:application --workers 2 --threads 4 --timeout 120 --preload
