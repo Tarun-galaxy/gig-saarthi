@@ -506,5 +506,6 @@ def worker_location_api(request, pk):
         data['distance_km'] = route['distance_km']
         data['eta_min'] = route['duration_min']
         data['polyline'] = route['polyline']
+        data['steps'] = route.get('steps', [])
 
     return JsonResponse(data)

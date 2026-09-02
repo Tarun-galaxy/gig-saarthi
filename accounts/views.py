@@ -266,8 +266,15 @@ def logout_view(request):
     """
     Log out the user via GET or POST request, clear session, and redirect to home.
     """
-    if request.user.is_authenticated:
-        logout(request)
+    try:
+        if request.user.is_authenticated:
+            logout(request)
+            messages.success(request, 'You have been successfully logged out.')
+    except Exception:
+        try:
+            request.session.flush()
+        except Exception:
+            pass
         messages.success(request, 'You have been successfully logged out.')
     return redirect('core:home')
 

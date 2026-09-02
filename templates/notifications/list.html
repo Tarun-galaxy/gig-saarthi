@@ -9,7 +9,7 @@
     <!-- ─── Header Strip with Role-Distinctive Indicator ─── -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <div class="flex items-center space-x-2 mb-1">
+            <div class="flex items-center space-x-2">
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">🔔 {% trans "Notifications" %}</h1>
                 {% if is_worker %}
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -25,13 +25,6 @@
                 </span>
                 {% endif %}
             </div>
-            <p class="text-xs sm:text-sm text-slate-500">
-                {% if is_worker %}
-                    {% trans "Real-time job dispatches, customer reviews, payout settlements & cooperative updates" %}
-                {% else %}
-                    {% trans "Service booking updates, worker live tracking status, payment receipts & invoices" %}
-                {% endif %}
-            </p>
         </div>
 
         {% if unread_count > 0 %}

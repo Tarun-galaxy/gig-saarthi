@@ -10,17 +10,6 @@
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
             {% trans "Welcome" %}, {{ user.first_name|default:user.username }}! 👋
         </h1>
-        <p class="text-gray-600 mt-1">
-            {% if user.is_worker %}
-                {% trans "Manage your jobs and profile" %}
-            {% elif user.is_customer %}
-                {% trans "Find trusted workers for your needs" %}
-            {% elif user.is_coop_admin %}
-                {% trans "Cooperative administration dashboard" %}
-            {% else %}
-                {% trans "Platform administration" %}
-            {% endif %}
-        </p>
     </div>
 
     {% if user.is_worker %}

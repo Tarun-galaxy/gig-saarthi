@@ -49,54 +49,72 @@
         </div>
 
         <!-- Visual Status Stepper -->
-        <div class="mb-8 p-4 bg-slate-50/80 dark:bg-slate-950/60 rounded-2xl border border-slate-100 dark:border-slate-800/80">
-            <div class="flex items-center justify-between px-2">
+        <div class="mb-8 p-3.5 sm:p-4 bg-slate-50/80 dark:bg-slate-950/60 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+            <!-- Stepper Circle & Line Track -->
+            <div class="flex items-center w-full px-1 sm:px-2">
                 <!-- Step 1: Pending -->
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
-                        {% if booking.status == 'pending' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-110
-                        {% else %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800{% endif %}">1</div>
-                    <span class="text-[11px] mt-2 text-center hidden sm:inline {% if booking.status == 'pending' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500 font-medium{% endif %}">{% trans "Pending" %}</span>
-                </div>
-                <div class="flex-1 h-1 mx-1.5 rounded-full bg-primary-200 dark:bg-primary-900/60"></div>
+                <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
+                    {% if booking.status == 'pending' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-105
+                    {% else %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800{% endif %}">1</div>
+                
+                <!-- Line 1 -> 2 -->
+                <div class="flex-1 min-w-[14px] h-1 sm:h-1.5 mx-1 sm:mx-2 rounded-full transition-all duration-300 {% if booking.status in 'matched,accepted,in_progress,completed' %}bg-primary-600 dark:bg-primary-500{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
 
                 <!-- Step 2: Matched -->
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
-                        {% if booking.status == 'matched' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-110
-                        {% elif booking.status in 'accepted,in_progress,completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
-                        {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">2</div>
-                    <span class="text-[11px] mt-2 text-center hidden sm:inline {% if booking.status == 'matched' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500 font-medium{% endif %}">{% trans "Matched" %}</span>
-                </div>
-                <div class="flex-1 h-1 mx-1.5 rounded-full {% if booking.status in 'accepted,in_progress,completed' %}bg-primary-200 dark:bg-primary-900/60{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
+                <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
+                    {% if booking.status == 'matched' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-105
+                    {% elif booking.status in 'accepted,in_progress,completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
+                    {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">2</div>
+                
+                <!-- Line 2 -> 3 -->
+                <div class="flex-1 min-w-[14px] h-1 sm:h-1.5 mx-1 sm:mx-2 rounded-full transition-all duration-300 {% if booking.status in 'accepted,in_progress,completed' %}bg-primary-600 dark:bg-primary-500{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
 
                 <!-- Step 3: Accepted -->
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
-                        {% if booking.status == 'accepted' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-110
-                        {% elif booking.status in 'in_progress,completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
-                        {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">3</div>
-                    <span class="text-[11px] mt-2 text-center hidden sm:inline {% if booking.status == 'accepted' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500 font-medium{% endif %}">{% trans "Accepted" %}</span>
-                </div>
-                <div class="flex-1 h-1 mx-1.5 rounded-full {% if booking.status in 'in_progress,completed' %}bg-primary-200 dark:bg-primary-900/60{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
+                <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
+                    {% if booking.status == 'accepted' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-105
+                    {% elif booking.status in 'in_progress,completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
+                    {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">3</div>
+                
+                <!-- Line 3 -> 4 -->
+                <div class="flex-1 min-w-[14px] h-1 sm:h-1.5 mx-1 sm:mx-2 rounded-full transition-all duration-300 {% if booking.status in 'in_progress,completed' %}bg-primary-600 dark:bg-primary-500{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
 
                 <!-- Step 4: In Progress -->
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
-                        {% if booking.status == 'in_progress' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-110
-                        {% elif booking.status == 'completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
-                        {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">4</div>
-                    <span class="text-[11px] mt-2 text-center hidden sm:inline {% if booking.status == 'in_progress' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500 font-medium{% endif %}">{% trans "In Progress" %}</span>
-                </div>
-                <div class="flex-1 h-1 mx-1.5 rounded-full {% if booking.status == 'completed' %}bg-primary-200 dark:bg-primary-900/60{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
+                <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
+                    {% if booking.status == 'in_progress' %}bg-primary-600 text-white ring-4 ring-primary-500/20 shadow-md scale-105
+                    {% elif booking.status == 'completed' %}bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800
+                    {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">4</div>
+                
+                <!-- Line 4 -> 5 -->
+                <div class="flex-1 min-w-[14px] h-1 sm:h-1.5 mx-1 sm:mx-2 rounded-full transition-all duration-300 {% if booking.status == 'completed' %}bg-emerald-600 dark:bg-emerald-500{% else %}bg-slate-200 dark:bg-slate-800{% endif %}"></div>
 
                 <!-- Step 5: Completed -->
-                <div class="flex flex-col items-center flex-1">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
-                        {% if booking.status == 'completed' %}bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-md scale-110
-                        {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">5</div>
-                    <span class="text-[11px] mt-2 text-center hidden sm:inline {% if booking.status == 'completed' %}text-emerald-600 dark:text-emerald-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500 font-medium{% endif %}">{% trans "Completed" %}</span>
-                </div>
+                <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all
+                    {% if booking.status == 'completed' %}bg-emerald-600 text-white ring-4 ring-emerald-500/20 shadow-md scale-105
+                    {% else %}bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500{% endif %}">5</div>
+            </div>
+
+            <!-- Labels on Desktop -->
+            <div class="hidden sm:grid grid-cols-5 gap-2 mt-2.5 text-center text-[11px] font-medium">
+                <div class="{% if booking.status == 'pending' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500{% endif %}">{% trans "Pending" %}</div>
+                <div class="{% if booking.status == 'matched' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500{% endif %}">{% trans "Matched" %}</div>
+                <div class="{% if booking.status == 'accepted' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500{% endif %}">{% trans "Accepted" %}</div>
+                <div class="{% if booking.status == 'in_progress' %}text-primary-600 dark:text-primary-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500{% endif %}">{% trans "In Progress" %}</div>
+                <div class="{% if booking.status == 'completed' %}text-emerald-600 dark:text-emerald-400 font-extrabold{% else %}text-slate-400 dark:text-slate-500{% endif %}">{% trans "Completed" %}</div>
+            </div>
+
+            <!-- Current Stage Pill on Mobile -->
+            <div class="sm:hidden mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">{% trans "Current Stage:" %}</span>
+                <span class="font-extrabold px-2.5 py-0.5 rounded-full text-[11px]
+                    {% if booking.status == 'completed' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800
+                    {% else %}bg-primary-100 text-primary-800 dark:bg-primary-950 dark:text-primary-300 border border-primary-200 dark:border-primary-800{% endif %}">
+                    {% if booking.status == 'pending' %}1/5 &middot; {% trans "Pending" %}
+                    {% elif booking.status == 'matched' %}2/5 &middot; {% trans "Matched" %}
+                    {% elif booking.status == 'accepted' %}3/5 &middot; {% trans "Accepted" %}
+                    {% elif booking.status == 'in_progress' %}4/5 &middot; {% trans "In Progress" %}
+                    {% elif booking.status == 'completed' %}5/5 &middot; {% trans "Completed" %}
+                    {% else %}{{ booking.get_status_display }}{% endif %}
+                </span>
             </div>
         </div>
 

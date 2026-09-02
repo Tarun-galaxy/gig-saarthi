@@ -473,6 +473,16 @@ var pollInterval = setInterval(function() {
                 }
             }
 
+            // Update distance & ETA values
+            if (data.distance_km !== undefined) {
+                var distEl = document.getElementById('distance-value');
+                if (distEl) distEl.textContent = data.distance_km + ' km';
+            }
+            if (data.eta_min !== undefined) {
+                var etaEl = document.getElementById('eta-value');
+                if (etaEl) etaEl.textContent = '~' + Math.round(data.eta_min) + ' min';
+            }
+
             // Update progress bar
             if (data.eta_min !== undefined && data.eta_min > 0) {
                 var pct = Math.max(5, Math.min(95, 100 - (data.eta_min / maxEta * 100)));

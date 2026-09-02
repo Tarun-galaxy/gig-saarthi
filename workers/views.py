@@ -397,6 +397,45 @@ def worker_ai_chat_api(request):
         return JsonResponse({'error': str(e), 'status': 'error'}, status=500)
 
 
+@csrf_exempt
+@login_required
+def worker_update_location(request):
+    """API endpoint to update worker's live GPS coordinates and recalculate active route."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+
+    try:
+        import json
+        data = json.loads(request.body.decode('utf-8'))
+        lat = float(data.get('latitude'))
+        lng = float(data.get('longitude'))
+        booking_id = data.get('booking_id')
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return JsonResponse({'error': 'Invalid coordinates'}, status=400)
+
+    if hasattr(request.user, 'worker_profile'):
+        wp = request.user.worker_profile
+        wp.current_latitude = lat
+        wp.current_longitude = lng
+        wp.save(update_fields=['current_latitude', 'current_longitude'])
+
+        route_info = None
+        if booking_id:
+            from bookings.models import Booking
+            booking = Booking.objects.filter(pk=booking_id, worker=request.user).first()
+            if booking and booking.latitude and booking.longitude:
+                from core.services.geoapify import get_route
+                route_info = get_route(lat, lng, booking.latitude, booking.longitude)
+
+        return JsonResponse({
+            'status': 'ok',
+            'latitude': lat,
+            'longitude': lng,
+            'route': route_info,
+        })
+    return JsonResponse({'error': 'Worker profile not found'}, status=404)
+
+
 @login_required
 def worker_earnings(request):
     """

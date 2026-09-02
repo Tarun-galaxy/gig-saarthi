@@ -199,7 +199,7 @@
                             </a>
                             <a href="{% url 'bookings:list' %}" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors inline-flex items-center space-x-1.5">
                                 <i data-lucide="calendar-check" class="w-4 h-4 text-slate-400"></i>
-                                <span>{% trans "Booking History" %}</span>
+                                <span>{% trans "Job History" %}</span>
                             </a>
                         {% endif %}
 
@@ -415,12 +415,6 @@
                 <span>{% trans "Jobs" %}</span>
             </a>
             {% endif %}
-            {% if user.is_coop_admin or user.is_platform_admin %}
-            <a href="{% url 'cooperative_admin:dashboard' %}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                <i data-lucide="shield" class="w-5 h-5 mb-0.5"></i>
-                <span>{% trans "Admin" %}</span>
-            </a>
-            {% endif %}
             {% if user.is_worker %}
             <!-- AI Sahayak Tab for Workers (Direct Window Trigger) -->
             <button type="button" onclick="if(window.openSaarthiAIChat){window.openSaarthiAIChat();}else{window.dispatchEvent(new CustomEvent('toggle-ai-chat'));}" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors cursor-pointer">
@@ -492,10 +486,7 @@
                         🤖
                     </div>
                     <div>
-                        <div class="flex items-center space-x-1.5">
-                            <h3 class="font-extrabold text-sm tracking-tight text-white leading-none">{% trans "Saarthi Sahayak" %}</h3>
-                            <span class="px-1.5 py-0.5 bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[9px] font-bold rounded-md">Groq AI</span>
-                        </div>
+                        <h3 class="font-extrabold text-sm tracking-tight text-white leading-none">{% trans "Saarthi Sahayak" %}</h3>
                         <p class="text-[11px] text-primary-100 font-medium leading-none mt-1">{% trans "24/7 Worker Grievance & Policy Help" %}</p>
                     </div>
                 </div>

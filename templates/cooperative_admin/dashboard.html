@@ -7,50 +7,59 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
 
     <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle">
-        <div>
-            <div class="flex items-center space-x-2.5">
-                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl font-black">
-                    🏢
+    <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-card mb-8 border border-indigo-900/50">
+        <!-- Ambient background glow effect -->
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <!-- Left: Title & Live Status Indicator -->
+            <div class="flex items-center space-x-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md text-indigo-300 border border-white/15 flex items-center justify-center text-2xl shadow-inner shrink-0">
+                    <i data-lucide="building-2" class="w-6 h-6 text-indigo-300"></i>
                 </div>
                 <div>
-                    <div class="flex items-center space-x-2">
-                        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    <div class="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
                             {% trans "Cooperative Admin Console" %}
                         </h1>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
                             {% trans "Federation Admin" %}
                         </span>
                     </div>
-                    <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <div class="flex items-center space-x-2 mt-1">
                         <span class="flex h-2 w-2 relative">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                        <span>{% trans "Real-time federation telemetry & dispatch stream active" %}</span>
+                        <span class="text-[11px] font-bold text-emerald-400 tracking-wide uppercase">{% trans "Live Federation Telemetry" %}</span>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="flex gap-2.5 flex-wrap">
-            <a href="{% url 'cooperative_admin:worker_verification' %}"
-                class="inline-flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
-                <span>🛡️</span>
-                <span>{% trans "Verify Workers" %}</span>
-                {% if pending_workers %}
-                <span class="ml-1 bg-white text-amber-800 rounded-full px-1.5 py-0.2 text-[10px] font-extrabold">{{ pending_workers }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'cooperative_admin:admin_booking_monitor' %}"
-                class="inline-flex items-center space-x-1.5 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
-                <span>📋</span>
-                <span>{% trans "Live Booking Monitor" %}</span>
-            </a>
-            <a href="{% url 'cooperative_admin:insurance_management' %}"
-                class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
-                <span>🛡️</span>
-                <span>{% trans "Safety Pool (5%)" %}</span>
-            </a>
+
+            <!-- Right: Interactive Quick Actions Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full lg:w-auto">
+                <a href="{% url 'cooperative_admin:worker_verification' %}"
+                    class="group relative inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 border border-amber-400/30">
+                    <i data-lucide="shield-check" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span>{% trans "Verify Workers" %}</span>
+                    {% if pending_workers %}
+                    <span class="bg-white text-amber-900 rounded-full px-2 py-0.5 text-[10px] font-black shadow-xs">{{ pending_workers }}</span>
+                    {% endif %}
+                </a>
+                
+                <a href="{% url 'cooperative_admin:admin_booking_monitor' %}"
+                    class="group relative inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 border border-indigo-400/30">
+                    <i data-lucide="activity" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span>{% trans "Live Booking Monitor" %}</span>
+                </a>
+                
+                <a href="{% url 'cooperative_admin:insurance_management' %}"
+                    class="group relative inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 border border-emerald-400/30">
+                    <i data-lucide="umbrella" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+                    <span>{% trans "Safety Pool (5%)" %}</span>
+                </a>
+            </div>
         </div>
     </div>
 

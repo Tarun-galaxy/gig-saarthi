@@ -637,15 +637,41 @@
                     gpsStatus.innerText = '{% trans "Live GPS Tracking" %} (±' + Math.round(pos.coords.accuracy) + 'm)';
                 }
 
-                // Send live position telemetry to server to update worker profile location
+                // Send live position telemetry to server to update worker profile location & recalculate route
                 fetch('/workers/api/location/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}'
                     },
-                    body: JSON.stringify({ latitude: newLat, longitude: newLng })
-                }).catch(function() {});
+                    body: JSON.stringify({ latitude: newLat, longitude: newLng, booking_id: '{{ b.pk }}' })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.route) {
+                        // 1. Update distance on screen
+                        var distEl = document.getElementById('live-distance-{{ b.pk }}');
+                        if (distEl && data.route.distance_km !== undefined) {
+                            distEl.innerText = data.route.distance_km;
+                        }
+                        // 2. Update ETA on screen
+                        var etaEl = document.getElementById('live-eta-{{ b.pk }}');
+                        if (etaEl && data.route.duration_min !== undefined) {
+                            etaEl.innerText = '~' + Math.round(data.route.duration_min);
+                        }
+                        // 3. Update top maneuver instruction banner
+                        var nextStepEl = document.getElementById('next-step-instruction-{{ b.pk }}');
+                        if (nextStepEl && data.route.steps && data.route.steps.length > 0) {
+                            nextStepEl.innerText = data.route.steps[0].instruction || 'Proceed along recommended route';
+                        }
+                        // 4. Update polyline
+                        if (data.route.polyline && data.route.polyline.length > 0 && polylineLayer) {
+                            fullRouteCoords = data.route.polyline;
+                            polylineLayer.setLatLngs(fullRouteCoords);
+                        }
+                    }
+                })
+                .catch(function() {});
             },
             function(err) {
                 var gpsStatus = document.getElementById('gps-status-{{ b.pk }}');

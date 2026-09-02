@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "My Bookings" %} — Gig Saarthi{% endblock %}
+{% block title %}{% if user.is_worker %}{% trans "Job History" %}{% else %}{% trans "Booking History" %}{% endif %} — Gig Saarthi{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
@@ -11,9 +11,8 @@
         <div>
             <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
                 <i data-lucide="clipboard-list" class="w-7 h-7 text-primary-500"></i>
-                <span>{% trans "Bookings & Job History" %}</span>
+                <span>{% if user.is_worker %}{% trans "Job History" %}{% else %}{% trans "Booking History" %}{% endif %}</span>
             </h1>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">{% trans "Track the lifecycle, receipts, and ratings of all service requests" %}</p>
         </div>
         {% if user.is_customer %}
         <a href="{% url 'bookings:create' %}" class="inline-flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition active:scale-[0.98]">
@@ -98,8 +97,7 @@
             <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-50 dark:bg-primary-950/70 text-primary-500 flex items-center justify-center">
                 <i data-lucide="inbox" class="w-8 h-8"></i>
             </div>
-            <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-1">{% trans "No bookings found" %}</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">{% trans "You haven't requested any services in this status category yet." %}</p>
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-4">{% if user.is_worker %}{% trans "No jobs found" %}{% else %}{% trans "No bookings found" %}{% endif %}</h3>
             {% if user.is_customer %}
             <a href="{% url 'bookings:create' %}" class="inline-flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition">
                 <i data-lucide="plus" class="w-4 h-4"></i>
