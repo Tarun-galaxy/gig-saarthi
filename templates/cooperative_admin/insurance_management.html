@@ -17,6 +17,7 @@
                     {% trans "Cooperative Welfare" %}
                 </span>
             </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{% trans "Approve worker applications, manage policy cards, and oversee the 5% cooperative welfare pool." %}</p>
         </div>
         <a href="{% url 'cooperative_admin:dashboard' %}"
             class="inline-flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition">
@@ -79,7 +80,7 @@
             <p class="text-2xl font-black text-emerald-600 mt-1">{{ total_active }}</p>
         </div>
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
-            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Pending Activation" %}</p>
+            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{% trans "Pending Approval" %}</p>
             <p class="text-2xl font-black text-amber-600 mt-1">{{ total_pending }}</p>
         </div>
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-4">
@@ -91,6 +92,62 @@
             <p class="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">{{ total_uninsured }}</p>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ⚡ Pending Worker Insurance Applications (Awaiting Approval)
+         ═══════════════════════════════════════════════════════════ -->
+    {% if pending_policies %}
+    <div class="bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-6 mb-8 shadow-md">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-3 h-3 rounded-full bg-amber-500 animate-ping"></span>
+                <h3 class="font-extrabold text-sm text-amber-950 dark:text-amber-100 uppercase tracking-wider">
+                    {% trans "Pending Worker Insurance Applications" %} ({{ pending_policies|length }})
+                </h3>
+            </div>
+            <span class="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-200/70 dark:bg-amber-900/60 px-3 py-1 rounded-full border border-amber-300 dark:border-amber-700">
+                {% trans "Action Required" %}
+            </span>
+        </div>
+        <p class="text-xs text-amber-800 dark:text-amber-300 mb-4">
+            {% trans "These workers applied for insurance coverage from their profile. Approving will activate their policy and automatically generate their official ID card." %}
+        </p>
+
+        <div class="space-y-3">
+            {% for policy in pending_policies %}
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800/80 gap-3 shadow-xs">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center text-lg font-black border border-amber-200 dark:border-amber-800 flex-shrink-0">
+                        {{ policy.worker.user.first_name|first|default:policy.worker.user.username|first|upper }}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <p class="text-xs font-extrabold text-slate-900 dark:text-white">{{ policy.worker.user.get_full_name|default:policy.worker.user.username }}</p>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                {{ policy.get_coverage_type_display }}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            📱 {{ policy.worker.user.phone_number }} &middot; Ref: <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400">{{ policy.policy_number }}</span> &middot; Cover: <span class="font-extrabold text-emerald-600">₹{{ policy.coverage_amount|floatformat:0 }}</span>
+                        </p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">
+                            {% trans "Applied on" %} {{ policy.created_at|date:"d M Y, g:i A" }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <a href="{% url 'cooperative_admin:approve_insurance' policy_id=policy.id %}"
+                        class="inline-flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer">
+                        <span>✅</span>
+                        <span>{% trans "Approve & Issue Policy Card" %}</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ═══════════════════════════════════════════════════════════
          Uninsured Workers — Quick Enrollment
@@ -160,7 +217,7 @@
                         <th class="px-4 py-3">{% trans "Coverage" %}</th>
                         <th class="px-4 py-3">{% trans "Validity" %}</th>
                         <th class="px-4 py-3">{% trans "Status" %}</th>
-                        <th class="px-4 py-3">{% trans "Enrolled By" %}</th>
+                        <th class="px-4 py-3 text-right">{% trans "Action" %}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -189,7 +246,17 @@
                                 {{ policy.get_status_display }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ policy.enrolled_by.get_full_name|default:"—" }}</td>
+                        <td class="px-4 py-3 text-right">
+                            {% if policy.status == 'pending' %}
+                            <a href="{% url 'cooperative_admin:approve_insurance' policy_id=policy.id %}"
+                                class="inline-flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-[11px] font-bold shadow-xs transition">
+                                <span>✅</span>
+                                <span>{% trans "Approve" %}</span>
+                            </a>
+                            {% else %}
+                            <span class="text-[11px] text-slate-400 font-medium">{% trans "Active Card Issued" %}</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>

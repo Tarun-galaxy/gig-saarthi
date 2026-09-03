@@ -287,6 +287,7 @@ def profile(request):
     user = request.user
     profile_data = None
     insurance = None
+    pending_insurance = None
     welfare_fund = None
     masked_account = ''
     certifications = []
@@ -294,9 +295,19 @@ def profile(request):
     if user.is_worker:
         from workers.models import WorkerProfile, WorkerInsurance
         profile_data, _ = WorkerProfile.objects.get_or_create(user=user)
+        
+        # Only active approved policies generate the official physical ID card
         insurance = WorkerInsurance.objects.filter(
-            worker=profile_data
+            worker=profile_data,
+            status='active'
         ).order_by('-valid_till')
+
+        # Pending application awaiting admin approval
+        pending_insurance = WorkerInsurance.objects.filter(
+            worker=profile_data,
+            status='pending'
+        ).order_by('-created_at').first()
+
         certifications = profile_data.certifications.select_related('skill').all()
 
         if profile_data.bank_account_number:
@@ -323,11 +334,13 @@ def profile(request):
     context = {
         'profile_data': profile_data,
         'insurance': insurance,
+        'pending_insurance': pending_insurance,
         'certifications': certifications,
         'masked_account': masked_account,
         'welfare_fund': welfare_fund,
     }
     return render(request, 'accounts/profile.html', context)
+
 
 
 @login_required

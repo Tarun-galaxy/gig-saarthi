@@ -450,3 +450,28 @@ def enroll_insurance(request, worker_id):
         )
 
     return redirect('cooperative_admin:insurance_management')
+
+
+@login_required
+@user_passes_test(is_coop_admin)
+def approve_insurance(request, policy_id):
+    """Approve and activate a worker's pending insurance application."""
+    from workers.models import WorkerInsurance
+    from notifications.models import Notification
+    
+    policy = get_object_or_404(WorkerInsurance, pk=policy_id)
+    policy.status = 'active'
+    policy.enrolled_by = request.user
+    policy.save()
+
+    # Notify worker
+    Notification.objects.create(
+        user=policy.worker.user,
+        title='Insurance Policy Activated! 🛡️',
+        message=f'Congratulations! Your {policy.get_coverage_type_display()} policy ({policy.policy_number}) for ₹{int(policy.coverage_amount):,} has been approved and activated by cooperative admin.',
+        notification_type='insurance_update',
+    )
+
+    messages.success(request, f'✅ Policy {policy.policy_number} for {policy.worker.user.get_full_name()} has been approved and activated.')
+    return redirect('cooperative_admin:insurance_management')
+

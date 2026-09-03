@@ -16,4 +16,6 @@ urlpatterns = [
     path('cooperatives/<int:pk>/', views.cooperative_detail, name='cooperative_detail'),
     path('insurance/', views.insurance_management, name='insurance_management'),
     path('insurance/enroll/<int:worker_id>/', views.enroll_insurance, name='enroll_insurance'),
+    path('insurance/approve/<int:policy_id>/', views.approve_insurance, name='approve_insurance'),
 ]
+
