@@ -83,10 +83,10 @@ def worker_list(request):
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
-    # View mode (grid or table/details)
-    view_mode = request.GET.get('view', 'grid').lower().strip()
+    # View mode (table or grid, default is table)
+    view_mode = request.GET.get('view', 'table').lower().strip()
     if view_mode not in ('grid', 'table'):
-        view_mode = 'grid'
+        view_mode = 'table'
 
     context = {
         'workers': page_obj,
