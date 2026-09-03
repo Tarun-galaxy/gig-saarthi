@@ -478,7 +478,7 @@ def booking_tracking(request, pk):
 
 @login_required
 def worker_location_api(request, pk):
-    """AJAX endpoint — returns worker's current location for live tracking."""
+    """AJAX endpoint — returns worker's current location and live booking status."""
     booking = get_object_or_404(Booking, pk=pk)
 
     if request.user not in (booking.customer, booking.worker) and \
@@ -488,7 +488,17 @@ def worker_location_api(request, pk):
     data = {
         'booking_id': booking.pk,
         'status': booking.status,
+        'status_display': booking.get_status_display(),
+        'is_emergency': booking.is_emergency,
         'worker_name': booking.worker.get_full_name() if booking.worker else None,
+        'worker_phone': booking.worker.phone_number if booking.worker else None,
+        'worker_rating': float(booking.worker.worker_profile.avg_rating) if booking.worker and hasattr(booking.worker, 'worker_profile') else None,
+        'customer_name': booking.customer.get_full_name() or booking.customer.username,
+        'service_name': booking.service_category.name,
+        'estimated_price': float(booking.estimated_price or 0),
+        'final_price': float(booking.final_price or booking.estimated_price or 0),
+        'pay_url': f"/payments/pay/{booking.pk}/",
+        'review_url': f"/ratings/submit/{booking.pk}/",
     }
 
     if booking.worker and hasattr(booking.worker, 'worker_profile'):
@@ -503,9 +513,10 @@ def worker_location_api(request, pk):
             data['worker_lat'], data['worker_lng'],
             booking.latitude, booking.longitude,
         )
-        data['distance_km'] = route['distance_km']
-        data['eta_min'] = route['duration_min']
-        data['polyline'] = route['polyline']
+        data['distance_km'] = route.get('distance_km')
+        data['eta_min'] = route.get('duration_min')
+        data['polyline'] = route.get('polyline', [])
         data['steps'] = route.get('steps', [])
 
     return JsonResponse(data)
+

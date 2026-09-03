@@ -41,6 +41,89 @@
         </a>
     </div>
 
+    <!-- Active Ongoing Bookings (Live Status Feed) -->
+    {% if active_bookings %}
+    <div class="mb-10" id="active-bookings-section">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>{% trans "Active Ongoing Jobs" %}</span>
+            </h2>
+            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                {{ active_bookings|length }} {% trans "In Progress" %}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for b in active_bookings %}
+            <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border-2 border-primary-500/30 dark:border-primary-400/30 p-5 shadow-card hover:shadow-floating transition-all flex flex-col justify-between relative overflow-hidden group">
+                <!-- Status header strip -->
+                <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-950/70 border border-primary-200 dark:border-primary-800 flex items-center justify-center text-xl shadow-xs">
+                            {{ b.service_category.icon }}
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                                {{ b.service_category.name }}
+                            </h3>
+                            <span class="text-[11px] font-mono font-bold text-slate-400">#{{ b.pk }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Live badge -->
+                    <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-extrabold border
+                        {% if b.status == 'in_progress' %}bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700
+                        {% elif b.status == 'accepted' %}bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700
+                        {% elif b.status == 'matched' %}bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700
+                        {% else %}bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700{% endif %}">
+                        <span class="w-2 h-2 rounded-full {% if b.status == 'in_progress' %}bg-emerald-500 animate-ping{% elif b.status == 'accepted' %}bg-indigo-500 animate-pulse{% elif b.status == 'matched' %}bg-amber-500 animate-pulse{% else %}bg-slate-400{% endif %}"></span>
+                        <span>{{ b.get_status_display }}</span>
+                    </span>
+                </div>
+
+                <!-- Middle Details -->
+                <div class="py-3.5 space-y-2 text-xs">
+                    <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                        <span class="text-slate-400">{% trans "Assigned Saarthi:" %}</span>
+                        <span class="font-bold text-slate-900 dark:text-white">
+                            {% if b.worker %}
+                                👷 {{ b.worker.get_full_name|default:b.worker.username }}
+                            {% else %}
+                                <span class="text-amber-600 dark:text-amber-400 font-semibold animate-pulse">{% trans "Matching nearby worker..." %}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="flex items-start justify-between text-slate-600 dark:text-slate-300">
+                        <span class="text-slate-400 flex-shrink-0 mr-2">{% trans "Address:" %}</span>
+                        <span class="font-medium text-right truncate max-w-[220px]">{{ b.address_text|default:"Customer address" }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                        <span class="text-slate-400">{% trans "Estimated Total:" %}</span>
+                        <span class="font-black text-emerald-600 dark:text-emerald-400 font-mono text-sm">₹{{ b.estimated_price|floatformat:0 }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                    {% if b.status in 'accepted,in_progress' %}
+                    <a href="{% url 'bookings:tracking' pk=b.pk %}" class="flex-1 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-2.5 rounded-xl font-black text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-1.5 active:scale-[0.98]">
+                        <span>📍</span>
+                        <span>{% trans "Track Live Location" %} →</span>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'bookings:detail' pk=b.pk %}" class="{% if b.status in 'accepted,in_progress' %}px-4{% else %}w-full{% endif %} bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center space-x-1">
+                        <span>{% trans "Job Details" %}</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Most Booked Services Quick Access -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle mb-10">
         <div class="flex items-center justify-between mb-6">
@@ -103,5 +186,38 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // ─── Auto-poll for live status updates if customer has active bookings ───
+    var activeCount = {{ active_bookings|length|default:0 }};
+    var customerPoll = setInterval(function() {
+        if (document.hidden) return;
+        
+        fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var newSection = doc.getElementById('active-bookings-section');
+                var curSection = document.getElementById('active-bookings-section');
+                
+                // Compare HTML content of active bookings
+                if ((newSection && !curSection) || (!newSection && curSection) || 
+                    (newSection && curSection && newSection.innerHTML.trim() !== curSection.innerHTML.trim())) {
+                    window.location.reload();
+                }
+            })
+            .catch(function() {});
+    }, 3500);
+
+    window.addEventListener('beforeunload', function() {
+        clearInterval(customerPoll);
+    });
+});
+</script>
 {% endblock %}
 

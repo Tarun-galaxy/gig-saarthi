@@ -114,6 +114,28 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // ─── Auto-poll for status updates on active bookings list every 4s ───
+    var listPoll = setInterval(function() {
+        if (document.hidden) return;
+        
+        fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var newBadges = Array.from(doc.querySelectorAll('.status-badge, .status-pill')).map(function(el) { return el.textContent.trim(); }).join('|');
+                var curBadges = Array.from(document.querySelectorAll('.status-badge, .status-pill')).map(function(el) { return el.textContent.trim(); }).join('|');
+                
+                if (newBadges !== curBadges) {
+                    window.location.reload();
+                }
+            })
+            .catch(function() {});
+    }, 4000);
+
+    window.addEventListener('beforeunload', function() {
+        clearInterval(listPoll);
+    });
 });
 </script>
 {% endblock %}

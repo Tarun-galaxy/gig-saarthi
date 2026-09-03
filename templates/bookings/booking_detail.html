@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // 8. Auto Live Polling for In-Progress Active Bookings
+    // 8. Auto Live Polling for In-Progress Active Bookings & Rider GPS
     {% if booking.status in 'accepted,in_progress,matched' %}
     var detailPollInterval = setInterval(function() {
         if (document.hidden) return; // Save resources when tab is backgrounded
@@ -714,10 +714,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.polyline && data.polyline.length > 0) {
                         window.detailFullRouteCoords = data.polyline;
                     }
-                    window.updateRiderPosition(data.worker_lat, data.worker_lng);
+                    if (typeof window.updateRiderPosition === 'function') {
+                        window.updateRiderPosition(data.worker_lat, data.worker_lng);
+                    }
                 }
             }).catch(function() {});
-    }, 7000);
+    }, 3000);
 
     window.addEventListener('beforeunload', function() {
         clearInterval(detailPollInterval);
@@ -726,6 +728,44 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+
+<!-- ─── Universal Real-Time Booking Status Watcher ─── -->
+{% if booking.status not in 'completed,cancelled_by_customer,cancelled_by_worker' %}
+<script>
+(function() {
+    var initialStatus = '{{ booking.status }}';
+    var bookingId = {{ booking.pk }};
+    
+    var statusWatchInterval = setInterval(function() {
+        if (document.hidden) return;
+        
+        fetch('/bookings/' + bookingId + '/status/')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.status && data.status !== initialStatus) {
+                    clearInterval(statusWatchInterval);
+                    
+                    // Show animated toast
+                    var toast = document.createElement('div');
+                    toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[10002] bg-primary-600 text-white px-6 py-3.5 rounded-2xl shadow-floating font-black text-sm flex items-center space-x-2 animate-bounce';
+                    toast.innerHTML = '<span>⚡</span><span>{% trans "Booking updated to" %} ' + (data.status.replace(/_/g, ' ').toUpperCase()) + '! {% trans "Updating..." %}</span>';
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                }
+            })
+            .catch(function() {});
+    }, 2500);
+
+    window.addEventListener('beforeunload', function() {
+        clearInterval(statusWatchInterval);
+    });
+})();
+</script>
+{% endif %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();

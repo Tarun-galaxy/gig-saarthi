@@ -233,7 +233,7 @@ var bookingId = {{ booking.pk }};
 var bookingStatus = '{{ booking.status }}';
 var maxEta = {{ route_info.duration_min|default:"30"|floatformat:0 }};  // for progress bar scaling
 
-// ─── Map (Dark Theme) ───
+// ─── Map (Light Theme) ───
 var map = L.map('tracking-map', {
     zoomControl: false,
     attributionControl: false,
@@ -243,7 +243,7 @@ var map = L.map('tracking-map', {
     dragging: true
 }).setView([workerLat, workerLng], 14);
 
-L.tileLayer('https://maps.geoapify.com/v1/tile/dark-matter/{z}/{x}/{y}.png?apiKey={{ geoapify_key|default:"37636925f80b4e0494861b4e9f0a0101" }}', {
+L.tileLayer('https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey={{ geoapify_key|default:"37636925f80b4e0494861b4e9f0a0101" }}', {
     maxZoom: 19
 }).addTo(map);
 
@@ -446,9 +446,10 @@ document.getElementById('progress-bar').style.width = progress + '%';
     });
 })();
 
-// ─── Polling: refresh worker location every 7s ───
+// ─── Live Real-time Polling: refresh location and job status every 2.5s ───
+var lastKnownStatus = bookingStatus;
 var pollInterval = setInterval(function() {
-    if (bookingStatus === 'completed' || bookingStatus === 'cancelled_by_customer' || bookingStatus === 'cancelled_by_worker') {
+    if (lastKnownStatus === 'completed' || lastKnownStatus === 'cancelled_by_customer' || lastKnownStatus === 'cancelled_by_worker') {
         clearInterval(pollInterval);
         return;
     }
@@ -456,60 +457,98 @@ var pollInterval = setInterval(function() {
     fetch('/bookings/' + bookingId + '/worker-location/')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.error) return;
+            if (!data || data.error) return;
 
-            // Update worker marker position & dynamically shrink route line ahead of Saarthi
+            // 1. Update worker marker position & dynamically shrink route line ahead of Saarthi
             if (data.worker_lat && data.worker_lng) {
                 var newRiderPos = [data.worker_lat, data.worker_lng];
-                workerMarker.setLatLng(newRiderPos);
+                if (typeof workerMarker !== 'undefined' && workerMarker) {
+                    workerMarker.setLatLng(newRiderPos);
+                }
 
                 if (data.polyline && data.polyline.length > 0) {
                     window.fullRouteCoords = data.polyline;
                 }
 
-                if (window.fullRouteCoords && window.fullRouteCoords.length > 0 && routeLine) {
+                if (window.fullRouteCoords && window.fullRouteCoords.length > 0 && typeof routeLine !== 'undefined' && routeLine) {
                     var remainingPath = sliceRouteFromPosition(newRiderPos, window.fullRouteCoords);
                     routeLine.setLatLngs(remainingPath);
                 }
             }
 
-            // Update distance & ETA values
-            if (data.distance_km !== undefined) {
+            // 2. Update distance & ETA values
+            if (data.distance_km !== undefined && data.distance_km !== null) {
                 var distEl = document.getElementById('distance-value');
                 if (distEl) distEl.textContent = data.distance_km + ' km';
             }
-            if (data.eta_min !== undefined) {
+            if (data.eta_min !== undefined && data.eta_min !== null) {
                 var etaEl = document.getElementById('eta-value');
                 if (etaEl) etaEl.textContent = '~' + Math.round(data.eta_min) + ' min';
             }
 
-            // Update progress bar
+            // 3. Update progress bar
             if (data.eta_min !== undefined && data.eta_min > 0) {
                 var pct = Math.max(5, Math.min(95, 100 - (data.eta_min / maxEta * 100)));
-                document.getElementById('progress-bar').style.width = pct + '%';
+                var pBar = document.getElementById('progress-bar');
+                if (pBar) pBar.style.width = pct + '%';
             } else if (data.eta_min !== undefined && data.eta_min <= 0) {
-                document.getElementById('progress-bar').style.width = '100%';
-                document.getElementById('status-text').textContent = 'Worker has arrived!';
+                var pBar = document.getElementById('progress-bar');
+                if (pBar) pBar.style.width = '100%';
             }
 
-            // Update status
-            if (data.status) {
+            // 4. Update worker profile details if newly assigned
+            if (data.worker_name) {
+                var wNameEl = document.getElementById('worker-name');
+                if (wNameEl) wNameEl.textContent = data.worker_name;
+            }
+
+            // 5. Detect and handle live status transitions
+            if (data.status && data.status !== lastKnownStatus) {
+                var oldStatus = lastKnownStatus;
+                lastKnownStatus = data.status;
                 bookingStatus = data.status;
+                
                 var badge = document.getElementById('status-badge');
                 var text = document.getElementById('status-text');
+
                 if (data.status === 'in_progress') {
-                    text.textContent = 'Job in progress';
-                    badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700';
+                    if (text) text.textContent = '{% trans "Job In Progress" %}';
+                    if (badge) badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 border border-emerald-300';
+                    // Show live alert banner
+                    var banner = document.createElement('div');
+                    banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[10001] bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-floating font-bold text-sm flex items-center space-x-2 animate-bounce';
+                    banner.innerHTML = '<span>⚡</span><span>{% trans "Saarthi has started your job!" %}</span>';
+                    document.body.appendChild(banner);
+                    setTimeout(function() { banner.remove(); }, 4000);
                 } else if (data.status === 'completed') {
-                    text.textContent = 'Job completed!';
-                    badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700';
                     clearInterval(pollInterval);
-                    setTimeout(function() { window.location.reload(); }, 2000);
+                    if (text) text.textContent = '{% trans "Job Completed!" %}';
+                    if (badge) badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800';
+                    
+                    var banner = document.createElement('div');
+                    banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[10001] bg-emerald-700 text-white px-6 py-4 rounded-2xl shadow-floating font-black text-sm flex items-center space-x-3';
+                    banner.innerHTML = '<span>🎉</span><span>{% trans "Service completed! Redirecting to payment & review..." %}</span>';
+                    document.body.appendChild(banner);
+                    
+                    setTimeout(function() {
+                        if (data.pay_url) {
+                            window.location.href = data.pay_url;
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 1800);
+                } else if (data.status.indexOf('cancelled') !== -1) {
+                    clearInterval(pollInterval);
+                    if (text) text.textContent = '{% trans "Booking Cancelled" %}';
+                    if (badge) badge.className = 'inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-rose-100 text-rose-800';
+                    setTimeout(function() {
+                        window.location.href = '/bookings/' + bookingId + '/';
+                    }, 1800);
                 }
             }
         })
         .catch(function() {});
-}, 7000);
+}, 2500);
 
 // Fit map to show both markers on load
 setTimeout(function() { map.invalidateSize(); }, 300);

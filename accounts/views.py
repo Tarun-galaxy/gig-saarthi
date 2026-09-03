@@ -288,6 +288,8 @@ def profile(request):
     profile_data = None
     insurance = None
     welfare_fund = None
+    masked_account = ''
+    certifications = []
 
     if user.is_worker:
         from workers.models import WorkerProfile, WorkerInsurance
@@ -295,6 +297,11 @@ def profile(request):
         insurance = WorkerInsurance.objects.filter(
             worker=profile_data
         ).order_by('-valid_till')
+        certifications = profile_data.certifications.select_related('skill').all()
+
+        if profile_data.bank_account_number:
+            acc = str(profile_data.bank_account_number)
+            masked_account = '•••• •••• ' + acc[-4:] if len(acc) >= 4 else acc
 
         # Calculate cooperative welfare fund contribution from completed bookings
         from payments.models import Invoice
@@ -316,6 +323,8 @@ def profile(request):
     context = {
         'profile_data': profile_data,
         'insurance': insurance,
+        'certifications': certifications,
+        'masked_account': masked_account,
         'welfare_fund': welfare_fund,
     }
     return render(request, 'accounts/profile.html', context)
@@ -323,13 +332,44 @@ def profile(request):
 
 @login_required
 def profile_edit(request):
-    """Edit user profile fields."""
+    """Edit user profile fields including skills, documents, and payout/bank details."""
     user = request.user
+    profile_data = None
+    skill_categories = []
+    worker_skill_ids = set()
+    certifications = []
+    cooperatives = []
+    all_skills = []
+
+    from workers.models import WorkerProfile, Skill, SkillCategory, Certification
+    from cooperative_admin.models import Cooperative
+    from customers.models import CustomerProfile
+
+    if user.is_worker:
+        profile_data, _ = WorkerProfile.objects.get_or_create(user=user)
+        skill_categories = SkillCategory.objects.prefetch_related('skills').all()
+        worker_skill_ids = set(profile_data.skills.values_list('id', flat=True))
+        certifications = profile_data.certifications.select_related('skill').all()
+        cooperatives = Cooperative.objects.filter(is_active=True)
+        all_skills = Skill.objects.select_related('category').all().order_by('name')
+    elif user.is_customer:
+        profile_data, _ = CustomerProfile.objects.get_or_create(user=user)
 
     if request.method == 'POST':
-        user.first_name = request.POST.get('first_name', user.first_name)
-        user.last_name = request.POST.get('last_name', user.last_name)
-        user.email = request.POST.get('email', user.email)
+        action = request.POST.get('action', 'save_all')
+
+        # Handle certificate deletion
+        if action == 'delete_certificate':
+            cert_id = request.POST.get('certificate_id')
+            if cert_id and user.is_worker:
+                Certification.objects.filter(id=cert_id, worker=profile_data).delete()
+                messages.success(request, 'Certificate removed successfully.')
+                return redirect(f"{request.path}?tab=documents")
+
+        # 1. Update basic user info
+        user.first_name = request.POST.get('first_name', user.first_name).strip()
+        user.last_name = request.POST.get('last_name', user.last_name).strip()
+        user.email = request.POST.get('email', user.email).strip()
         user.preferred_language = request.POST.get('preferred_language', user.preferred_language)
 
         if 'profile_photo' in request.FILES:
@@ -342,32 +382,133 @@ def profile_edit(request):
 
         user.save()
 
-        # Update role-specific profile
-        if user.is_worker:
-            from workers.models import WorkerProfile
-            profile, _ = WorkerProfile.objects.get_or_create(user=user)
-            profile.bio = request.POST.get('bio', profile.bio)
-            experience = request.POST.get('experience_years', profile.experience_years)
+        # 2. Update role-specific fields
+        if user.is_worker and profile_data:
+            # Basic work details
+            profile_data.bio = request.POST.get('bio', profile_data.bio).strip()
+            exp = request.POST.get('experience_years', profile_data.experience_years)
             try:
-                profile.experience_years = int(experience)
+                profile_data.experience_years = max(0, int(exp))
             except (ValueError, TypeError):
                 pass
-            profile.save()
-        elif user.is_customer:
-            from customers.models import CustomerProfile
-            profile, _ = CustomerProfile.objects.get_or_create(user=user)
-            profile.default_address = request.POST.get('default_address', profile.default_address)
+            
+            avail = request.POST.get('availability_status')
+            if avail in ('available', 'busy', 'offline'):
+                profile_data.availability_status = avail
+
+            coop_id = request.POST.get('cooperative')
+            if coop_id:
+                profile_data.cooperative = Cooperative.objects.filter(id=coop_id).first()
+            elif 'cooperative' in request.POST:
+                profile_data.cooperative = None
+
+            # Trade Skills (if skills field is present in submission)
+            if 'skills' in request.POST or action == 'save_skills':
+                skill_ids = request.POST.getlist('skills')
+                profile_data.skills.set(Skill.objects.filter(id__in=skill_ids))
+
+            # KYC & ID Documents
+            id_type = request.POST.get('id_proof_type')
+            if id_type is not None:
+                profile_data.id_proof_type = id_type
+
+            if 'id_proof_file' in request.FILES:
+                id_file = request.FILES['id_proof_file']
+                is_valid, error = validate_file_upload(id_file, 'id_proof')
+                if not is_valid:
+                    messages.error(request, f'ID document upload failed: {error}')
+                    return redirect(f"{request.path}?tab=documents")
+                profile_data.id_proof_file = id_file
+
+            # Bank & Direct Payout Details
+            bank_name = request.POST.get('bank_name')
+            if bank_name is not None:
+                profile_data.bank_name = bank_name.strip()
+            
+            acc_num = request.POST.get('bank_account_number')
+            if acc_num is not None:
+                profile_data.bank_account_number = acc_num.strip()
+
+            ifsc = request.POST.get('bank_ifsc_code')
+            if ifsc is not None:
+                profile_data.bank_ifsc_code = ifsc.strip().upper()
+
+            upi = request.POST.get('upi_id')
+            if upi is not None:
+                profile_data.upi_id = upi.strip()
+
+            # New Certificate Upload
+            if 'certificate_file' in request.FILES:
+                cert_file = request.FILES['certificate_file']
+                cert_name = request.POST.get('certificate_name', '').strip()
+                cert_skill_id = request.POST.get('certificate_skill')
+                cert_issuer = request.POST.get('certificate_issued_by', '').strip()
+                cert_date = request.POST.get('certificate_issue_date')
+
+                if cert_name and cert_skill_id:
+                    is_valid, error = validate_file_upload(cert_file, 'certificate')
+                    if not is_valid:
+                        messages.error(request, f'Certificate upload failed: {error}')
+                        return redirect(f"{request.path}?tab=documents")
+                    
+                    target_skill = Skill.objects.filter(id=cert_skill_id).first()
+                    if target_skill:
+                        Certification.objects.create(
+                            worker=profile_data,
+                            skill=target_skill,
+                            certificate_name=cert_name,
+                            certificate_file=cert_file,
+                            issued_by=cert_issuer,
+                            issue_date=cert_date or None,
+                        )
+                        messages.success(request, f'Certificate "{cert_name}" uploaded successfully.')
+
+            profile_data.save()
+
+        elif user.is_customer and profile_data:
+            profile_data.default_address = request.POST.get('default_address', profile_data.default_address)
             try:
-                profile.default_latitude = float(request.POST.get('latitude', profile.default_latitude))
-                profile.default_longitude = float(request.POST.get('longitude', profile.default_longitude))
+                profile_data.default_latitude = float(request.POST.get('latitude', profile_data.default_latitude))
+                profile_data.default_longitude = float(request.POST.get('longitude', profile_data.default_longitude))
             except (ValueError, TypeError):
                 pass
-            profile.save()
+            profile_data.save()
 
         messages.success(request, 'Profile updated successfully!')
+        
+        active_tab = request.POST.get('active_tab')
+        if active_tab and active_tab != 'basic':
+            return redirect(f"{request.path}?tab={active_tab}")
         return redirect('accounts:profile')
 
-    return render(request, 'accounts/profile_edit.html')
+    selected_tab = request.GET.get('tab', 'basic')
+    id_proof_types = [
+        'Aadhaar Card',
+        'PAN Card',
+        'Voter ID Card',
+        'Driving License',
+        'Passport',
+        'Labour / E-Shram Card',
+    ]
+
+    masked_account = ''
+    if profile_data and hasattr(profile_data, 'bank_account_number') and profile_data.bank_account_number:
+        acc = str(profile_data.bank_account_number)
+        masked_account = '•••• •••• ' + acc[-4:] if len(acc) >= 4 else acc
+
+    context = {
+        'profile_data': profile_data,
+        'skill_categories': skill_categories,
+        'worker_skill_ids': worker_skill_ids,
+        'certifications': certifications,
+        'cooperatives': cooperatives,
+        'all_skills': all_skills,
+        'id_proof_types': id_proof_types,
+        'selected_tab': selected_tab,
+        'masked_account': masked_account,
+    }
+    return render(request, 'accounts/profile_edit.html', context)
+
 
 
 @login_required

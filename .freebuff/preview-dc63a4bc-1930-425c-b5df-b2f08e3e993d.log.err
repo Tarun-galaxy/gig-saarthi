@@ -1,9 +1,0 @@
-Watching for file changes with StatReloader
-C:\Users\tarun\OneDrive\Desktop\Gig Saarthi\core\views.py changed, reloading.
-Watching for file changes with StatReloader
-Forbidden (CSRF token from POST incorrect.): /accounts/login/
-[28/Aug/2026 00:39:11] "POST /accounts/login/ HTTP/1.1" 403 2556
-Forbidden (CSRF token from POST incorrect.): /accounts/login/
-[28/Aug/2026 00:39:32] "POST /accounts/login/ HTTP/1.1" 403 2556
-[28/Aug/2026 00:39:46] "GET /accounts/login/ HTTP/1.1" 200 16903
-[28/Aug/2026 00:40:32] "GET / HTTP/1.1" 200 9747

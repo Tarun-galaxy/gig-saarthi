@@ -37,3 +37,8 @@ Thumbs.db
 # Environment variables
 .env.local
 .env.production
+
+# Preview & Dev Server artifacts
+.freebuff/
+.freebuffserver.log
+

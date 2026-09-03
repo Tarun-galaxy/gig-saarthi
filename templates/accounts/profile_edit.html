@@ -1,165 +1,776 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Edit Profile" %} — Gig Saarthi{% endblock %}
+{% block title %}{% trans "Edit Profile & Credentials" %} — Gig Saarthi{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-    <a href="{% url 'accounts:profile' %}" class="text-primary-600 hover:text-primary-700 text-sm mb-4 inline-block">← {% trans "Back to Profile" %}</a>
-    <h1 class="text-2xl font-bold mb-6">✏️ {% trans "Edit Profile" %}</h1>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+            <a href="{% url 'accounts:profile' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 mb-2 transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>{% trans "Back to Profile" %}</span>
+            </a>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center space-x-2">
+                <span>✏️</span>
+                <span>{% trans "Edit Profile & Credentials" %}</span>
+            </h1>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                {{ user.get_role_display }}
+            </span>
+        </div>
+    </div>
 
-    <form method="post" enctype="multipart/form-data" class="bg-white rounded-xl shadow-md p-6">
+    <!-- ─── Tab Navigation Bar ─── -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 scrollbar-none border-b border-slate-200/80 dark:border-slate-800">
+        <button type="button" onclick="switchTab('basic')" id="tab-btn-basic"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-primary-600 text-white shadow-sm">
+            <span>👤</span>
+            <span>{% trans "Basic Info" %}</span>
+        </button>
+
+        {% if user.is_worker %}
+        <button type="button" onclick="switchTab('skills')" id="tab-btn-skills"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span>🛠️</span>
+            <span>{% trans "Trade Skills" %}</span>
+            {% if worker_skill_ids %}
+            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-mono">{{ worker_skill_ids|length }}</span>
+            {% endif %}
+        </button>
+
+        <button type="button" onclick="switchTab('documents')" id="tab-btn-documents"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span>📄</span>
+            <span>{% trans "KYC & Documents" %}</span>
+        </button>
+
+        <button type="button" onclick="switchTab('payout')" id="tab-btn-payout"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span>🏦</span>
+            <span>{% trans "Payout & Bank Details" %}</span>
+        </button>
+
+        <button type="button" onclick="switchTab('work')" id="tab-btn-work"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span>⚡</span>
+            <span>{% trans "Work Preferences" %}</span>
+        </button>
+        {% endif %}
+
+        {% if user.is_customer %}
+        <button type="button" onclick="switchTab('location')" id="tab-btn-location"
+            class="tab-btn px-4 py-2.5 rounded-xl text-xs font-extrabold transition flex items-center space-x-2 whitespace-nowrap bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span>📍</span>
+            <span>{% trans "Service Address" %}</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Main Edit Form -->
+    <form method="post" enctype="multipart/form-data" id="profile-edit-form">
         {% csrf_token %}
+        <input type="hidden" name="active_tab" id="active_tab_input" value="{{ selected_tab|default:'basic' }}">
 
-        <!-- Profile Photo -->
-        <div class="mb-6 text-center">
-            <div class="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center text-4xl font-bold text-primary-600 mx-auto mb-3">
-                {{ user.first_name|first|default:user.username|first }}
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  TAB 1: BASIC INFORMATION                                      -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-basic" class="tab-pane space-y-6">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center space-x-2">
+                    <span>👤</span>
+                    <span>{% trans "Personal Information" %}</span>
+                </h3>
+
+                <!-- Profile Photo Uploader -->
+                <div class="flex items-center space-x-5 mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
+                    <div class="relative group">
+                        <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-3xl font-black shadow-sm overflow-hidden" id="photo-preview-container">
+                            {% if user.profile_photo %}
+                            <img src="{{ user.profile_photo.url }}" alt="{{ user.username }}" class="w-full h-full object-cover" id="photo-preview-img">
+                            {% else %}
+                            <span id="photo-preview-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="cursor-pointer inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
+                            <i data-lucide="camera" class="w-4 h-4 text-primary-600"></i>
+                            <span>{% trans "Upload New Photo" %}</span>
+                            <input type="file" name="profile_photo" id="profile_photo_input" accept="image/*" class="hidden" onchange="previewProfilePhoto(this)">
+                        </label>
+                        <p class="text-[11px] text-slate-400 mt-1">{% trans "JPG, PNG or WebP. Max size 2MB." %}</p>
+                    </div>
+                </div>
+
+                <!-- Names -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "First Name" %} *</label>
+                        <input type="text" name="first_name" value="{{ user.first_name }}" required
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Last Name" %}</label>
+                        <input type="text" name="last_name" value="{{ user.last_name }}"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                    </div>
+                </div>
+
+                <!-- Email & Phone -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Email Address" %}</label>
+                        <input type="email" name="email" value="{{ user.email }}"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white"
+                            placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Phone Number" %} (OTP Verified)</label>
+                        <div class="relative">
+                            <input type="tel" value="{{ user.phone_number }}" disabled
+                                class="w-full px-4 py-3 border border-slate-200/80 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl text-sm font-mono font-bold text-slate-500 cursor-not-allowed">
+                            <span class="absolute right-3 top-3 text-xs text-emerald-600 font-bold">✓ Verified</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language -->
+                <div class="mb-2">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Preferred Platform Language" %}</label>
+                    <select name="preferred_language"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                        <option value="en" {% if user.preferred_language == 'en' %}selected{% endif %}>English</option>
+                        <option value="hi" {% if user.preferred_language == 'hi' %}selected{% endif %}>हिंदी (Hindi)</option>
+                        <option value="bn" {% if user.preferred_language == 'bn' %}selected{% endif %}>বাংলা (Bengali)</option>
+                    </select>
+                </div>
             </div>
-            <label class="cursor-pointer text-sm text-primary-600 hover:text-primary-700">
-                📷 {% trans "Change Photo" %}
-                <input type="file" name="profile_photo" accept="image/*" class="hidden">
-            </label>
         </div>
 
-        <!-- Basic Info -->
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "First Name" %}</label>
-                <input type="text" name="first_name" value="{{ user.first_name }}"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">
+        {% if user.is_worker %}
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  TAB 2: TRADE SKILLS MANAGEMENT                                -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-skills" class="tab-pane space-y-6 hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+                            <span>🛠️</span>
+                            <span>{% trans "Your Trade Skills & Services" %}</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {% trans "Select all the skills you provide. Customers will match with you for these trade categories." %}
+                        </p>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" id="skill-search-input" onkeyup="filterSkills()"
+                            placeholder="{% trans 'Filter skills...' %}"
+                            class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 font-medium">
+                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+                    </div>
+                </div>
+
+                <!-- Skill Categories Grid -->
+                <div class="space-y-6" id="skills-catalog">
+                    {% for cat in skill_categories %}
+                    <div class="skill-category-block bg-slate-50/70 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200/70 dark:border-slate-800">
+                        <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-slate-200/60 dark:border-slate-800">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-xl">{{ cat.icon|default:"🔧" }}</span>
+                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">{{ cat.name }}</h4>
+                            </div>
+                            <span class="text-[11px] font-bold text-slate-400">{{ cat.skills.count }} {% trans "available" %}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                            {% for skill in cat.skills.all %}
+                            <label class="skill-checkbox-label relative flex items-center space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 cursor-pointer hover:border-primary-400 transition-all select-none group">
+                                <input type="checkbox" name="skills" value="{{ skill.id }}"
+                                    {% if skill.id in worker_skill_ids %}checked{% endif %}
+                                    class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300 cursor-pointer">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors truncate">
+                                        {{ skill.name }}
+                                    </p>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-xs text-slate-500 py-6 text-center">{% trans "No skill categories found in database." %}</p>
+                    {% endfor %}
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Last Name" %}</label>
-                <input type="text" name="last_name" value="{{ user.last_name }}"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  TAB 3: KYC & DOCUMENTS MANAGEMENT                             -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-documents" class="tab-pane space-y-6 hidden">
+            
+            <!-- Government ID Document Section -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+                        <span>🪪</span>
+                        <span>{% trans "Government ID Proof & KYC" %}</span>
+                    </h3>
+                    {% if profile_data.is_verified %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        ✅ {% trans "Verified by Cooperative" %}
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        ⏳ {% trans "Verification Pending" %}
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">
+                    {% trans "Government ID is required for verification and insurance enrollment by your cooperative federation." %}
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "ID Proof Document Type" %}</label>
+                        <select name="id_proof_type"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                            <option value="">-- {% trans "Select ID Type" %} --</option>
+                            {% for id_type in id_proof_types %}
+                            <option value="{{ id_type }}" {% if profile_data.id_proof_type == id_type %}selected{% endif %}>{{ id_type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Upload / Replace ID Document" %}</label>
+                        <input type="file" name="id_proof_file" accept=".jpg,.jpeg,.png,.pdf"
+                            class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl text-xs text-slate-700 dark:text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary-600 file:text-white hover:file:bg-primary-700">
+                        <p class="text-[10px] text-slate-400 mt-1">{% trans "PDF, JPG, PNG up to 5MB." %}</p>
+                    </div>
+                </div>
+
+                {% if profile_data.id_proof_file %}
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-sm">
+                            📄
+                        </div>
+                        <div>
+                            <p class="text-xs font-extrabold text-slate-900 dark:text-white">{{ profile_data.id_proof_type|default:"ID Document" }}</p>
+                            <p class="text-[11px] text-slate-400">{% trans "Uploaded on file" %}</p>
+                        </div>
+                    </div>
+                    <a href="{{ profile_data.id_proof_file.url }}" target="_blank"
+                        class="inline-flex items-center space-x-1 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-primary-500 rounded-xl text-xs font-bold text-primary-600 dark:text-primary-300 transition">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>{% trans "View Document" %}</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Trade Certifications & Diplomas -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-2 flex items-center space-x-2">
+                    <span>🎓</span>
+                    <span>{% trans "Trade Certificates & Diplomas" %}</span>
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">
+                    {% trans "Upload trade diplomas, ITI certificates, or skill certifications to boost your trust badge and job matching priority." %}
+                </p>
+
+                <!-- Existing Certifications List -->
+                {% if certifications %}
+                <div class="space-y-3 mb-6">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">{% trans "Uploaded Certificates" %} ({{ certifications|length }})</h4>
+                    {% for cert in certifications %}
+                    <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
+                                📜
+                            </div>
+                            <div>
+                                <p class="text-xs font-extrabold text-slate-900 dark:text-white">{{ cert.certificate_name }}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                    {{ cert.skill.name }} &middot; {{ cert.issued_by|default:"Institute" }}
+                                    {% if cert.issue_date %}&middot; {{ cert.issue_date|date:"M Y" }}{% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            {% if cert.is_verified %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✅ Verified</span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⏳ Under Review</span>
+                            {% endif %}
+                            <a href="{{ cert.certificate_file.url }}" target="_blank" class="p-2 text-slate-500 hover:text-primary-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="View">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <button type="submit" name="action" value="delete_certificate" onclick="document.getElementById('delete_cert_id_input').value='{{ cert.id }}'; return confirm('Delete this certificate?')" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950 transition" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="certificate_id" id="delete_cert_id_input" value="">
+                {% endif %}
+
+                <!-- Add New Certificate Sub-Form -->
+                <div class="p-5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60">
+                    <h4 class="text-xs font-black text-indigo-900 dark:text-indigo-200 uppercase tracking-wider mb-4 flex items-center space-x-1.5">
+                        <span>➕</span>
+                        <span>{% trans "Add New Trade Certificate" %}</span>
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3.5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Certificate Name / Title" %}</label>
+                            <input type="text" name="certificate_name" placeholder="e.g. ITI Electrician Diploma, National Skill Certificate"
+                                class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-xs font-medium">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Associated Trade Skill" %}</label>
+                            <select name="certificate_skill"
+                                class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-xs font-medium">
+                                <option value="">-- {% trans "Select Skill" %} --</option>
+                                {% for s in all_skills %}
+                                <option value="{{ s.id }}">{{ s.name }} ({{ s.category.name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Issued By / Institution" %}</label>
+                            <input type="text" name="certificate_issued_by" placeholder="e.g. NSDC, ITI Delhi, Skill India"
+                                class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Issue Date" %}</label>
+                            <input type="date" name="certificate_issue_date"
+                                class="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-xs font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Certificate File" %}</label>
+                            <input type="file" name="certificate_file" accept=".pdf,.jpg,.jpeg,.png"
+                                class="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl text-[11px]">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Email" %}</label>
-            <input type="email" name="email" value="{{ user.email }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  TAB 4: DIRECT PAYOUT & BANK ACCOUNT DETAILS                   -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-payout" class="tab-pane space-y-6 hidden">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Bank & UPI Form Inputs -->
+                <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle space-y-5">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+                            <span>🏦</span>
+                            <span>{% trans "Direct Payout Bank Account" %}</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {% trans "95% of job earnings are paid out directly to this account via instant UPI or weekly NEFT/RTGS bank transfer." %}
+                        </p>
+                    </div>
+
+                    <!-- Bank Name -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Bank Name" %}</label>
+                        <input type="text" name="bank_name" id="input-bank-name" value="{{ profile_data.bank_name|default:'' }}"
+                            placeholder="e.g. State Bank of India, HDFC Bank, Punjab National Bank"
+                            oninput="updateBankCardPreview()"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                    </div>
+
+                    <!-- Account Number -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Bank Account Number" %}</label>
+                        <input type="text" name="bank_account_number" id="input-account-num" value="{{ profile_data.bank_account_number|default:'' }}"
+                            placeholder="e.g. 112233445566"
+                            oninput="updateBankCardPreview()"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-mono font-bold text-slate-900 dark:text-white">
+                    </div>
+
+                    <!-- IFSC Code -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "IFSC Code" %}</label>
+                        <input type="text" name="bank_ifsc_code" id="input-ifsc-code" value="{{ profile_data.bank_ifsc_code|default:'' }}"
+                            placeholder="e.g. SBIN0001234, HDFC0005678"
+                            style="text-transform: uppercase;"
+                            oninput="this.value = this.value.toUpperCase(); updateBankCardPreview()"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-mono font-bold text-slate-900 dark:text-white">
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="relative py-2">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200 dark:border-slate-800"></div></div>
+                        <div class="relative flex justify-center text-xs uppercase"><span class="bg-white dark:bg-slate-900 px-3 text-slate-400 font-bold">{% trans "OR Instant UPI" %}</span></div>
+                    </div>
+
+                    <!-- UPI ID -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center space-x-1.5">
+                            <span>⚡</span>
+                            <span>{% trans "UPI ID (VPA) for Instant Settlements" %}</span>
+                        </label>
+                        <input type="text" name="upi_id" id="input-upi-id" value="{{ profile_data.upi_id|default:'' }}"
+                            placeholder="e.g. 9876543210@paytm, name@oksbi"
+                            oninput="updateBankCardPreview()"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-mono font-bold text-slate-900 dark:text-white">
+                        <p class="text-[11px] text-slate-400 mt-1">{% trans "Instant 0% fee settlement right after customer pays invoice." %}</p>
+                    </div>
+                </div>
+
+                <!-- Right: Live Card Preview & Cooperative Benefit -->
+                <div class="lg:col-span-5 space-y-4">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">{% trans "Live Payout Card Preview" %}</p>
+                    
+                    <!-- Dynamic Virtual Card -->
+                    <div class="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white shadow-xl border border-slate-700 relative overflow-hidden select-none">
+                        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between mb-6">
+                            <span class="text-xs font-mono font-extrabold uppercase tracking-widest text-emerald-400">⚡ GIG SAARTHI PAYOUT</span>
+                            <span class="text-xl">🏦</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{% trans "Bank / Method" %}</p>
+                            <p class="text-base font-black text-white mt-0.5 truncate" id="card-preview-bank">
+                                {{ profile_data.bank_name|default:"Verified Banking Partner" }}
+                            </p>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{% trans "Account Number" %}</p>
+                            <p class="text-sm font-mono font-extrabold text-slate-100 tracking-wider mt-0.5" id="card-preview-account">
+                                {{ masked_account|default:"•••• •••• ••••" }}
+                            </p>
+                            <p class="text-[10px] font-mono text-slate-400 mt-0.5" id="card-preview-ifsc">
+                                IFSC: {{ profile_data.bank_ifsc_code|default:"NOT LINKED" }}
+                            </p>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-700/80 flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{% trans "UPI VPA" %}</p>
+                                <p class="text-xs font-mono font-bold text-emerald-400 truncate max-w-[180px]" id="card-preview-upi">
+                                    {{ profile_data.upi_id|default:"None linked" }}
+                                </p>
+                            </div>
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cooperative Trust Note -->
+                    <div class="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-xs">
+                        <p class="font-bold text-emerald-900 dark:text-emerald-200 flex items-center space-x-1.5">
+                            <span>🔒</span>
+                            <span>{% trans "100% Payout Protection" %}</span>
+                        </p>
+                        <p class="text-slate-600 dark:text-slate-300 text-[11px] mt-1 leading-relaxed">
+                            {% trans "Cooperative accounts are protected by Reserve Bank of India & NCCT guidelines. Payouts are dispatched directly without third-party aggregator holds." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Phone" %}</label>
-            <input type="tel" value="{{ user.phone_number }}" disabled
-                class="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-base">
-            <p class="text-xs text-gray-500 mt-1">{% trans "Phone number cannot be changed" %}</p>
-        </div>
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  TAB 5: WORK PREFERENCES & COOPERATIVE FEDERATION               -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-work" class="tab-pane space-y-6 hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle space-y-6">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+                    <span>⚡</span>
+                    <span>{% trans "Work Preferences & Federation Assignment" %}</span>
+                </h3>
 
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Preferred Language" %}</label>
-            <select name="preferred_language"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">
-                <option value="en" {% if user.preferred_language == 'en' %}selected{% endif %}>{% trans "English" %}</option>
-                <option value="hi" {% if user.preferred_language == 'hi' %}selected{% endif %}>{% trans "Hindi" %}</option>
-                <option value="bn" {% if user.preferred_language == 'bn' %}selected{% endif %}>{% trans "Bengali" %}</option>
-            </select>
-        </div>
+                <!-- Bio -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Public Bio & Services Summary" %}</label>
+                    <textarea name="bio" rows="3"
+                        placeholder="{% trans 'Tell customers about your expertise, experience, and service guarantees...' %}"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-medium text-slate-900 dark:text-white">{{ profile_data.bio }}</textarea>
+                </div>
 
-        <!-- Role-Specific Fields -->
-        {% if user.is_worker and profile_data %}
-        <hr class="my-6">
-        <h2 class="text-lg font-semibold mb-4">👷 {% trans "Worker Details" %}</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Years of Experience -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Years of Professional Experience" %}</label>
+                        <input type="number" name="experience_years" value="{{ profile_data.experience_years|default:0 }}" min="0" max="50"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-bold text-slate-900 dark:text-white">
+                    </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Bio" %}</label>
-            <textarea name="bio" rows="3"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">{{ profile_data.bio }}</textarea>
-        </div>
+                    <!-- Cooperative Society -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Assigned Cooperative Society" %}</label>
+                        <select name="cooperative"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                            <option value="">-- {% trans "Select Cooperative Society" %} --</option>
+                            {% for coop in cooperatives %}
+                            <option value="{{ coop.id }}" {% if profile_data.cooperative_id == coop.id %}selected{% endif %}>
+                                {{ coop.name }} ({{ coop.get_federation_level_display }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Years of Experience" %}</label>
-            <input type="number" name="experience_years" value="{{ profile_data.experience_years }}" min="0" max="50"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">
+                <!-- Availability Status -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">{% trans "Current Availability Status" %}</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="p-3.5 rounded-2xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center
+                            {% if profile_data.availability_status == 'available' %}bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/20{% else %}bg-surface-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600{% endif %}">
+                            <input type="radio" name="availability_status" value="available" {% if profile_data.availability_status == 'available' %}checked{% endif %} class="hidden">
+                            <span class="text-xl mb-1">🟢</span>
+                            <span class="text-xs font-extrabold">{% trans "Online" %}</span>
+                            <span class="text-[10px] text-slate-400">{% trans "Accept jobs" %}</span>
+                        </label>
+
+                        <label class="p-3.5 rounded-2xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center
+                            {% if profile_data.availability_status == 'busy' %}bg-amber-50 dark:bg-amber-950/60 border-amber-400 text-amber-800 dark:text-amber-200 ring-2 ring-amber-500/20{% else %}bg-surface-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600{% endif %}">
+                            <input type="radio" name="availability_status" value="busy" {% if profile_data.availability_status == 'busy' %}checked{% endif %} class="hidden">
+                            <span class="text-xl mb-1">🟡</span>
+                            <span class="text-xs font-extrabold">{% trans "Busy" %}</span>
+                            <span class="text-[10px] text-slate-400">{% trans "On a job" %}</span>
+                        </label>
+
+                        <label class="p-3.5 rounded-2xl border cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center
+                            {% if profile_data.availability_status == 'offline' %}bg-slate-200 dark:bg-slate-800 border-slate-400 text-slate-800 dark:text-slate-200 ring-2 ring-slate-500/20{% else %}bg-surface-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600{% endif %}">
+                            <input type="radio" name="availability_status" value="offline" {% if profile_data.availability_status == 'offline' %}checked{% endif %} class="hidden">
+                            <span class="text-xl mb-1">⚪</span>
+                            <span class="text-xs font-extrabold">{% trans "Offline" %}</span>
+                            <span class="text-[10px] text-slate-400">{% trans "Taking a break" %}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
 
         {% if user.is_customer and profile_data %}
-        <hr class="my-6">
-        <h2 class="text-lg font-semibold mb-4">🏠 {% trans "Customer Details" %}</h2>
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!--  CUSTOMER SERVICE LOCATION TAB                                 -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div id="tab-pane-location" class="tab-pane space-y-6 hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-subtle space-y-4">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
+                    <span>📍</span>
+                    <span>{% trans "Default Service Address & Map Pin" %}</span>
+                </h3>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{% trans "Default Address" %}</label>
-            <textarea name="default_address" rows="2"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base">{{ profile_data.default_address }}</textarea>
-        </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">{% trans "Full Street Address" %}</label>
+                    <textarea name="default_address" id="default_address" rows="2"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-medium text-slate-900 dark:text-white">{{ profile_data.default_address }}</textarea>
+                </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">{% trans "Default Location" %}</label>
-            <div class="relative">
-                <input type="text" id="address-search" autocomplete="off"
-                    class="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-base"
-                    placeholder="{% trans 'Search your address...' %}">
-                <div id="address-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-48 overflow-y-auto"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">{% trans "Search & Pinpoint on Map" %}</label>
+                    <div class="relative mb-2">
+                        <input type="text" id="address-search" autocomplete="off"
+                            class="w-full px-4 py-3 pr-10 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold"
+                            placeholder="{% trans 'Search your street, area or apartment...' %}">
+                        <div id="address-suggestions" class="absolute z-10 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg mt-1 hidden max-h-48 overflow-y-auto"></div>
+                    </div>
+
+                    <button type="button" id="btn-current-location"
+                        class="mb-3 group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-primary-50 to-indigo-50 hover:from-primary-100 hover:to-indigo-100 dark:from-primary-950/80 dark:to-indigo-950/80 border border-primary-200/90 dark:border-primary-800/80 text-primary-700 dark:text-primary-300 text-xs font-extrabold shadow-2xs hover:shadow-xs transition-all duration-200 active:scale-95 cursor-pointer">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <i data-lucide="crosshair" class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 group-hover:rotate-45 transition-transform duration-300"></i>
+                        <span>{% trans "Use current GPS" %}</span>
+                    </button>
+
+                    <div id="map" class="h-56 rounded-2xl border border-slate-200 dark:border-slate-800"></div>
+                    <input type="hidden" name="latitude" id="latitude" value="{{ profile_data.default_latitude|default:'28.6139' }}">
+                    <input type="hidden" name="longitude" id="longitude" value="{{ profile_data.default_longitude|default:'77.2090' }}">
+                </div>
             </div>
-            <button type="button" id="btn-current-location"
-                class="mt-2.5 group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-primary-50 to-indigo-50 hover:from-primary-100 hover:to-indigo-100 dark:from-primary-950/80 dark:to-indigo-950/80 border border-primary-200/90 dark:border-primary-800/80 text-primary-700 dark:text-primary-300 text-xs font-extrabold shadow-2xs hover:shadow-xs transition-all duration-200 active:scale-95 cursor-pointer">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-primary-600 dark:text-primary-400 group-hover:rotate-45 transition-transform duration-300"></i>
-                <span>{% trans "Use current GPS" %}</span>
-            </button>
-            <div id="map" class="h-48 rounded-lg border border-gray-300 mt-2"></div>
-            <input type="hidden" name="latitude" id="latitude" value="{{ profile_data.default_latitude }}">
-            <input type="hidden" name="longitude" id="longitude" value="{{ profile_data.default_longitude }}">
         </div>
         {% endif %}
 
-        <button type="submit"
-            class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition text-base">
-            {% trans "Save Changes" %}
-        </button>
+        <!-- Save Button Sticky Bar -->
+        <div class="mt-8 pt-6 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <a href="{% url 'accounts:change_password' %}" class="text-xs font-bold text-slate-500 hover:text-primary-600 dark:text-slate-400 dark:hover:text-primary-400 flex items-center space-x-1.5">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span>{% trans "Change Account Password" %}</span>
+            </a>
+
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <a href="{% url 'accounts:profile' %}" class="flex-1 sm:flex-none text-center px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    {% trans "Cancel" %}
+                </a>
+                <button type="submit" name="action" value="save_all"
+                    class="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white font-extrabold px-8 py-3 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] text-sm cursor-pointer">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>{% trans "Save All Changes" %}</span>
+                </button>
+            </div>
+        </div>
     </form>
-
-    <!-- Change Password Link -->
-    <div class="mt-6 text-center">
-        <a href="{% url 'accounts:change_password' %}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-            🔒 {% trans "Change Password" %}
-        </a>
-    </div>
 </div>
+{% endblock %}
 
-{% if user.is_customer %}
 {% block extra_js %}
 <script>
+// ─── Tab Switching Logic ───
+function switchTab(tabId) {
+    // Hide all panes
+    document.querySelectorAll('.tab-pane').forEach(function(pane) {
+        pane.classList.add('hidden');
+    });
+    
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.classList.remove('bg-primary-600', 'text-white', 'shadow-sm');
+        btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-600', 'dark:text-slate-400', 'border', 'border-slate-200/80', 'dark:border-slate-800');
+    });
+
+    // Show target pane
+    var targetPane = document.getElementById('tab-pane-' + tabId);
+    if (targetPane) {
+        targetPane.classList.remove('hidden');
+    }
+
+    // Activate target button
+    var targetBtn = document.getElementById('tab-btn-' + tabId);
+    if (targetBtn) {
+        targetBtn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-600', 'dark:text-slate-400', 'border', 'border-slate-200/80', 'dark:border-slate-800');
+        targetBtn.classList.add('bg-primary-600', 'text-white', 'shadow-sm');
+    }
+
+    // Update hidden field for post retention
+    var hiddenTabInput = document.getElementById('active_tab_input');
+    if (hiddenTabInput) {
+        hiddenTabInput.value = tabId;
+    }
+
+    // Leaflet map refresh if switching to location tab
+    if (tabId === 'location' && typeof window.mapInstance !== 'undefined') {
+        setTimeout(function() { window.mapInstance.invalidateSize(); }, 200);
+    }
+}
+
+// ─── Live Bank Card Preview ───
+function updateBankCardPreview() {
+    var bankInput = document.getElementById('input-bank-name');
+    var accInput = document.getElementById('input-account-num');
+    var ifscInput = document.getElementById('input-ifsc-code');
+    var upiInput = document.getElementById('input-upi-id');
+
+    var cardBank = document.getElementById('card-preview-bank');
+    var cardAcc = document.getElementById('card-preview-account');
+    var cardIfsc = document.getElementById('card-preview-ifsc');
+    var cardUpi = document.getElementById('card-preview-upi');
+
+    if (cardBank && bankInput) {
+        cardBank.textContent = bankInput.value.trim() || 'Verified Banking Partner';
+    }
+    if (cardAcc && accInput) {
+        var val = accInput.value.trim();
+        if (val.length >= 4) {
+            cardAcc.textContent = '•••• •••• ' + val.slice(-4);
+        } else if (val.length > 0) {
+            cardAcc.textContent = val;
+        } else {
+            cardAcc.textContent = '•••• •••• ••••';
+        }
+    }
+    if (cardIfsc && ifscInput) {
+        cardIfsc.textContent = 'IFSC: ' + (ifscInput.value.trim() || 'NOT LINKED');
+    }
+    if (cardUpi && upiInput) {
+        cardUpi.textContent = upiInput.value.trim() || 'None linked';
+    }
+}
+
+// ─── Photo Preview ───
+function previewProfilePhoto(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var container = document.getElementById('photo-preview-container');
+            container.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// ─── Skill Filter Search ───
+function filterSkills() {
+    var filter = document.getElementById('skill-search-input').value.toLowerCase();
+    document.querySelectorAll('.skill-checkbox-label').forEach(function(item) {
+        var text = item.textContent.toLowerCase();
+        if (text.indexOf(filter) > -1) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Initial Tab activation from URL query or default
+    var initialTab = '{{ selected_tab|default:"basic" }}';
+    switchTab(initialTab);
+
+    // Customer map initialization
+    {% if user.is_customer and profile_data %}
     var lat = {{ profile_data.default_latitude|default:"28.6139" }};
     var lon = {{ profile_data.default_longitude|default:"77.2090" }};
 
-    GigMap.init('map', { center: [lat, lon], zoom: 13 });
-    var pin = GigMap.addMarker('my-location', lat, lon, {
-        emoji: '📍', color: GigMap.ICONS.customer, draggable: true
-    });
-    GigMap.makeDraggablePin('my-location', {
-        latInputId: 'latitude',
-        lonInputId: 'longitude',
-        addressInputId: 'default_address',
-    });
-
-    GigMap.setSearchBox('address-search', 'address-suggestions', {
-        latInputId: 'latitude',
-        lonInputId: 'longitude',
-        addressInputId: 'default_address',
-    });
-
-    document.getElementById('btn-current-location').addEventListener('click', function() {
-        GigMap.useCurrentLocation({
-            buttonId: 'btn-current-location',
-            searchInputId: 'address-search',
-            addressInputId: 'default_address',
+    if (typeof GigMap !== 'undefined') {
+        window.mapInstance = GigMap.init('map', { center: [lat, lon], zoom: 13 });
+        GigMap.addMarker('my-location', lat, lon, {
+            emoji: '📍', color: GigMap.ICONS.customer, draggable: true
+        });
+        GigMap.makeDraggablePin('my-location', {
             latInputId: 'latitude',
             lonInputId: 'longitude',
+            addressInputId: 'default_address',
         });
-    });
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+        GigMap.setSearchBox('address-search', 'address-suggestions', {
+            latInputId: 'latitude',
+            lonInputId: 'longitude',
+            addressInputId: 'default_address',
+        });
+        var btnLoc = document.getElementById('btn-current-location');
+        if (btnLoc) {
+            btnLoc.addEventListener('click', function() {
+                GigMap.useCurrentLocation({
+                    buttonId: 'btn-current-location',
+                    searchInputId: 'address-search',
+                    addressInputId: 'default_address',
+                    latInputId: 'latitude',
+                    lonInputId: 'longitude',
+                });
+            });
+        }
+    }
+    {% endif %}
 });
 </script>
-{% endblock %}
-{% endif %}
 {% endblock %}

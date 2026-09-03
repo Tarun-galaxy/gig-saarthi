@@ -229,7 +229,7 @@
 
         {% for item in active_bookings %}
         {% with b=item.booking route=item.route %}
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-card mb-5 overflow-hidden border border-slate-200/80 dark:border-slate-800 isolate" id="job-container-{{ b.pk }}">
+        <div class="active-job-card bg-white dark:bg-slate-900 rounded-2xl shadow-card mb-5 overflow-hidden border border-slate-200/80 dark:border-slate-800 isolate" id="job-container-{{ b.pk }}">
 
             <!-- ─── Uber-Style Live Rider Map Container with Floating HUD ─── -->
             <div class="relative w-full overflow-hidden bg-slate-950 isolate z-10" style="height: 320px;" id="map-wrapper-{{ b.pk }}">
@@ -688,20 +688,26 @@
 {% endwith %}
 {% endfor %}
 
-// ─── Auto-refresh new requests every 10 seconds ───
+// ─── Real-Time Live Auto-Refresh: Check for new offers & active job updates every 3.5s ───
 setInterval(function() {
+    if (document.hidden) return; // Pause when tab is hidden
+    
     fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.text(); })
         .then(function(html) {
             var doc = new DOMParser().parseFromString(html, 'text/html');
-            var newCards = doc.querySelectorAll('.job-card');
-            var currentCards = document.querySelectorAll('.job-card');
-            if (newCards.length !== currentCards.length) {
+            var newOfferCards = doc.querySelectorAll('.job-card').length;
+            var curOfferCards = document.querySelectorAll('.job-card').length;
+            
+            var newActiveCards = doc.querySelectorAll('.active-job-card').length;
+            var curActiveCards = document.querySelectorAll('.active-job-card').length;
+            
+            if (newOfferCards !== curOfferCards || newActiveCards !== curActiveCards) {
                 window.location.reload();
             }
         })
         .catch(function() {});
-}, 10000);
+}, 3500);
 
 // ─── Countdown timer animation ───
 document.querySelectorAll('.job-card').forEach(function(card) {
