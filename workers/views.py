@@ -41,11 +41,12 @@ def worker_list(request):
 
     # Category filter (e.g. Plumbing, Electrical, Carpentry, Cleaning)
     selected_category = request.GET.get('category', '').strip()
-    if selected_category and selected_category != 'all':
-        workers = workers.filter(
-            Q(skills__category__name__iexact=selected_category) |
-            Q(skills__category__id__iexact=selected_category if selected_category.isdigit() else -1)
-        ).distinct()
+    if selected_category and selected_category.lower() != 'all':
+        if selected_category.isdigit():
+            workers = workers.filter(skills__category__id=int(selected_category)).distinct()
+        else:
+            workers = workers.filter(skills__category__name__iexact=selected_category).distinct()
+
 
     # Skill filter
     selected_skill = request.GET.get('skill', '').strip()
