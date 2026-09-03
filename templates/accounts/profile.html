@@ -257,10 +257,17 @@
          ═══════════════════════════════════════════════════════════════════ -->
     {% if insurance is not None %}
     <div class="mb-6">
-        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mb-3 flex items-center space-x-2">
-            <span>🛡️</span>
-            <span>{% trans "Cooperative Safety & Insurance Protection" %}</span>
-        </h3>
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span>🛡️</span>
+                <span>{% trans "Cooperative Safety & Insurance Protection" %}</span>
+            </h3>
+            <button type="button" onclick="document.getElementById('apply-insurance-modal').classList.remove('hidden')"
+                class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer">
+                <span>➕</span>
+                <span>{% trans "Apply for Insurance" %}</span>
+            </button>
+        </div>
 
         {% for policy in insurance %}
         <!-- Physical ID Card Container -->
@@ -317,8 +324,9 @@
                         {% trans "Expired" %}
                     </span>
                     {% elif policy.status == 'pending' %}
-                    <span class="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-amber-950/50 text-amber-400 border border-amber-800/60">
-                        {% trans "Pending" %}
+                    <span class="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-amber-950/50 text-amber-400 border border-amber-800/60 flex items-center space-x-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span>{% trans "Under Review" %}</span>
                     </span>
                     {% else %}
                     <span class="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
@@ -366,21 +374,26 @@
             </div>
         </div>
         {% empty %}
-        <!-- No Insurance Enrolled — Pending Card -->
-        <div class="relative rounded-2xl overflow-hidden shadow-card select-none"
-             style="aspect-ratio: 1.6/1; max-width: 414px; min-height: 198px;">
+        <!-- No Insurance Enrolled Card with Direct Apply CTA -->
+        <div class="relative rounded-2xl overflow-hidden shadow-card select-none mb-4"
+             style="aspect-ratio: 1.6/1; max-width: 414px; min-height: 220px;">
             <div class="absolute inset-0" style="background: linear-gradient(135deg, #1e293b, #334155, #475569);"></div>
             <div class="absolute inset-0 opacity-[0.03]"
                  style="background-image: repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(255,255,255,0.1) 12px, rgba(255,255,255,0.1) 13px);"></div>
             <div class="relative z-10 p-5 h-full flex flex-col items-center justify-center text-center">
-                <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl mb-2.5 opacity-50">
+                <div class="w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl mb-2">
                     🛡️
                 </div>
-                <p class="text-xs sm:text-sm font-extrabold text-slate-400">{% trans "Insurance Not Yet Enrolled" %}</p>
-                <p class="text-[10px] text-slate-500 mt-1 max-w-xs">
-                    {% trans "Your cooperative admin will enroll you in the safety insurance program funded by the 5% cooperative platform fee." %}
+                <p class="text-xs sm:text-sm font-extrabold text-white">{% trans "No Active Insurance Enrolled" %}</p>
+                <p class="text-[10.5px] text-slate-300 mt-1 max-w-xs leading-relaxed">
+                    {% trans "Get up to ₹10 Lakhs accident & medical protection. 100% funded by your 5% cooperative welfare pool." %}
                 </p>
-                <div class="absolute bottom-0 left-0 right-0 h-1 flex opacity-30">
+                <button type="button" onclick="document.getElementById('apply-insurance-modal').classList.remove('hidden')"
+                    class="mt-3.5 inline-flex items-center space-x-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md transition active:scale-95 cursor-pointer">
+                    <span>🛡️</span>
+                    <span>{% trans "Apply for Free Insurance Now" %} →</span>
+                </button>
+                <div class="absolute bottom-0 left-0 right-0 h-1 flex opacity-40">
                     <div class="flex-1" style="background: #f97316;"></div>
                     <div class="flex-1" style="background: #ffffff;"></div>
                     <div class="flex-1" style="background: #22c55e;"></div>
@@ -423,15 +436,147 @@
         </div>
         {% endif %}
 
-        <!-- Emergency SOS Action -->
-        <div class="mt-3">
+        <!-- Emergency SOS & Action Toolbar -->
+        <div class="mt-3 flex flex-col sm:flex-row items-center gap-2.5">
+            <button type="button" onclick="document.getElementById('apply-insurance-modal').classList.remove('hidden')"
+                class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer">
+                <span>🛡️</span>
+                <span>{% trans "Apply for New / Additional Cover" %}</span>
+            </button>
             <button type="button" onclick="alert('🚨 Emergency SOS request submitted! Your cooperative admin will be notified immediately. In a real emergency, please call 112.')"
-                class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
+                class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer">
                 <span>🚨</span>
                 <span>{% trans "File Safety Claim / Emergency SOS" %}</span>
             </button>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         🛡️ Apply for Insurance Modal
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div id="apply-insurance-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+            <!-- Modal Header -->
+            <div class="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center text-xl">
+                        🛡️
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">{% trans "Apply for Cooperative Safety Insurance" %}</h3>
+                        <p class="text-[11px] text-slate-500">{% trans "100% Cooperative funded via 5% platform fee" %}</p>
+                    </div>
+                </div>
+                <button type="button" onclick="document.getElementById('apply-insurance-modal').classList.add('hidden')"
+                    class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Modal Form Content -->
+            <form method="post" action="{% url 'workers:apply_insurance' %}" class="p-6 overflow-y-auto space-y-4 flex-1">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">{% trans "Select Safety Insurance Plan" %}</label>
+                    
+                    <div class="space-y-2.5">
+                        <label class="relative flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 cursor-pointer select-none">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="coverage_type" value="accident" checked class="text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <p class="text-xs font-black text-slate-900 dark:text-white">{% trans "Accident & Disability Protection" %}</p>
+                                    <p class="text-[11px] text-slate-500">{% trans "24/7 on-job coverage & permanent disability cover" %}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-emerald-700 dark:text-emerald-300 font-mono">₹5,00,000</span>
+                        </label>
+
+                        <label class="relative flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 cursor-pointer select-none">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="coverage_type" value="combined" class="text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <p class="text-xs font-black text-slate-900 dark:text-white">{% trans "360° Saarthi All-Round Cover" %}</p>
+                                    <p class="text-[11px] text-slate-500">{% trans "Accident + Hospital cash ₹1,500/day + Tool Loss cover" %}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-indigo-600 dark:text-indigo-400 font-mono">₹7,50,000</span>
+                        </label>
+
+                        <label class="relative flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 cursor-pointer select-none">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="coverage_type" value="health" class="text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <p class="text-xs font-black text-slate-900 dark:text-white">{% trans "Emergency Hospital & Health Cover" %}</p>
+                                    <p class="text-[11px] text-slate-500">{% trans "Inpatient hospitalization & medical emergencies" %}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-slate-700 dark:text-slate-300 font-mono">₹2,50,000</span>
+                        </label>
+
+                        <label class="relative flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 cursor-pointer select-none">
+                            <div class="flex items-center space-x-3">
+                                <input type="radio" name="coverage_type" value="life" class="text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <p class="text-xs font-black text-slate-900 dark:text-white">{% trans "Term Life Insurance" %}</p>
+                                    <p class="text-[11px] text-slate-500">{% trans "Family security & bereavement financial grant" %}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-purple-600 dark:text-purple-400 font-mono">₹10,00,000</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nominee Section -->
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">{% trans "Nominee / Beneficiary Details" %}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">{% trans "Nominee Full Name" %} *</label>
+                            <input type="text" name="nominee_name" required placeholder="{% trans 'e.g. Sunita Devi' %}"
+                                class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">{% trans "Relationship" %} *</label>
+                            <select name="nominee_relation" required
+                                class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 font-medium">
+                                <option value="Spouse">{% trans "Spouse (Wife/Husband)" %}</option>
+                                <option value="Parent">{% trans "Parent (Father/Mother)" %}</option>
+                                <option value="Child">{% trans "Child (Son/Daughter)" %}</option>
+                                <option value="Sibling">{% trans "Sibling (Brother/Sister)" %}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">{% trans "Nominee Mobile Number" %}</label>
+                        <input type="tel" name="nominee_phone" placeholder="{% trans '10-digit mobile' %}"
+                            class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 font-medium">
+                    </div>
+                </div>
+
+                <!-- Declaration -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-[11px] text-slate-500 dark:text-slate-400">
+                    <label class="flex items-start space-x-2 cursor-pointer">
+                        <input type="checkbox" required checked class="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>{% trans "I confirm my details are accurate and agree to enroll under the NCCT Cooperative Welfare Safety Group Insurance scheme." %}</span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end space-x-3">
+                    <button type="button" onclick="document.getElementById('apply-insurance-modal').classList.add('hidden')"
+                        class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                        {% trans "Cancel" %}
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-md transition active:scale-95 cursor-pointer">
+                        {% trans "Submit Application" %} 🛡️
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
     {% endif %}
     {% endif %}
 

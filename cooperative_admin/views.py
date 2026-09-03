@@ -79,10 +79,39 @@ def admin_dashboard(request):
         valid_till__gte=now
     ).count()
 
-    # ── Recent Activity ──
-    recent_bookings = Booking.objects.select_related(
+    # ── Recent Activity with Pagination ──
+    from django.core.paginator import Paginator
+    
+    booking_qs = Booking.objects.select_related(
         'customer', 'worker', 'service_category'
-    )[:10]
+    ).order_by('-created_at')
+
+    status_filter = request.GET.get('status_filter', '')
+    if status_filter and status_filter != 'all':
+        if status_filter == 'active':
+            booking_qs = booking_qs.filter(status__in=['accepted', 'in_progress', 'matched'])
+        elif status_filter == 'pending':
+            booking_qs = booking_qs.filter(status='pending')
+        elif status_filter == 'completed':
+            booking_qs = booking_qs.filter(status='completed')
+        else:
+            booking_qs = booking_qs.filter(status=status_filter)
+
+    search_q = request.GET.get('search_q', '').strip()
+    if search_q:
+        booking_qs = booking_qs.filter(
+            Q(id__icontains=search_q) |
+            Q(customer__first_name__icontains=search_q) |
+            Q(customer__last_name__icontains=search_q) |
+            Q(customer__username__icontains=search_q) |
+            Q(worker__first_name__icontains=search_q) |
+            Q(worker__last_name__icontains=search_q) |
+            Q(service_category__name__icontains=search_q)
+        )
+
+    paginator = Paginator(booking_qs, 8)
+    page_number = request.GET.get('page', 1)
+    recent_bookings = paginator.get_page(page_number)
 
     recent_notifications = Notification.objects.filter(
         is_read=False
@@ -134,6 +163,8 @@ def admin_dashboard(request):
         # Activity
         'recent_bookings': recent_bookings,
         'recent_notifications': recent_notifications,
+        'status_filter': status_filter,
+        'search_q': search_q,
         # Cooperatives
         'cooperatives': cooperatives,
     }
@@ -153,24 +184,41 @@ def admin_dashboard(request):
 @login_required
 @user_passes_test(is_coop_admin)
 def admin_booking_monitor(request):
-    """Live booking monitor with status filtering."""
+    """Live booking monitor with pagination and status filtering."""
     status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('search', '').strip()
     
-    bookings = Booking.objects.select_related(
+    bookings_qs = Booking.objects.select_related(
         'customer', 'worker', 'service_category'
-    )
+    ).order_by('-created_at')
 
     if status_filter:
-        bookings = bookings.filter(status=status_filter)
+        bookings_qs = bookings_qs.filter(status=status_filter)
+
+    if search_query:
+        bookings_qs = bookings_qs.filter(
+            Q(id__icontains=search_query) |
+            Q(customer__first_name__icontains=search_query) |
+            Q(customer__last_name__icontains=search_query) |
+            Q(customer__username__icontains=search_query) |
+            Q(worker__first_name__icontains=search_query) |
+            Q(worker__last_name__icontains=search_query) |
+            Q(service_category__name__icontains=search_query)
+        )
     
-    bookings = bookings[:50]
+    from django.core.paginator import Paginator
+    paginator = Paginator(bookings_qs, 15)
+    page_number = request.GET.get('page', 1)
+    bookings = paginator.get_page(page_number)
 
     context = {
         'bookings': bookings,
         'status_filter': status_filter,
+        'search_query': search_query,
         'status_choices': Booking.STATUS_CHOICES,
     }
     return render(request, 'cooperative_admin/booking_monitor.html', context)
+
 
 
 @login_required

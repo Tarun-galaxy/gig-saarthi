@@ -586,3 +586,85 @@ def worker_earnings(request):
     return render(request, 'workers/earnings.html', context)
 
 
+@login_required
+def apply_insurance(request):
+    """Allow worker to apply for cooperative safety insurance directly from their profile."""
+    if request.user.role != 'worker':
+        messages.error(request, 'Only registered workers can apply for cooperative safety insurance.')
+        return redirect('accounts:profile')
+
+    if request.method == 'POST':
+        coverage_type = request.POST.get('coverage_type', 'accident')
+        nominee_name = request.POST.get('nominee_name', '').strip()
+        nominee_relation = request.POST.get('nominee_relation', '').strip()
+        nominee_phone = request.POST.get('nominee_phone', '').strip()
+
+        coverage_amounts = {
+            'accident': 500000.00,
+            'health': 250000.00,
+            'life': 1000000.00,
+            'combined': 750000.00,
+        }
+        coverage_amount = coverage_amounts.get(coverage_type, 500000.00)
+
+        import random
+        from datetime import date, timedelta
+        from workers.models import WorkerProfile, WorkerInsurance
+        from notifications.models import Notification
+        from accounts.models import User
+
+        profile, _ = WorkerProfile.objects.get_or_create(user=request.user)
+
+        # Generate a unique policy / application reference
+        rand_suffix = random.randint(10000, 99999)
+        policy_num = f"GS-INS-{request.user.id}-{rand_suffix}"
+
+        today = date.today()
+        valid_till = today + timedelta(days=365)
+
+        insurance = WorkerInsurance.objects.create(
+            worker=profile,
+            policy_number=policy_num,
+            provider='National Cooperative Insurance Federation (NCCT)',
+            coverage_type=coverage_type,
+            coverage_amount=coverage_amount,
+            valid_from=today,
+            valid_till=valid_till,
+            status='pending',
+        )
+
+        # Notify the worker
+        Notification.objects.create(
+            user=request.user,
+            title='Insurance Application Submitted 🛡️',
+            message=(
+                f"Your application for {insurance.get_coverage_type_display()} (Ref: {policy_num}) "
+                f"with ₹{int(coverage_amount):,} cover has been submitted to your cooperative admin. "
+                "Review & activation takes 24–48 hours."
+            ),
+            notification_type='insurance_update',
+        )
+
+        # Notify cooperative admins
+        admins = User.objects.filter(role__in=['coop_admin', 'platform_admin'], is_active=True)
+        for admin in admins:
+            Notification.objects.create(
+                user=admin,
+                title='New Insurance Application 🛡️',
+                message=(
+                    f"Worker {request.user.get_full_name() or request.user.username} applied for "
+                    f"{insurance.get_coverage_type_display()} (Ref: {policy_num}). Please review in Admin Console."
+                ),
+                notification_type='insurance_update',
+            )
+
+        messages.success(
+            request,
+            f"🛡️ Your insurance application for {insurance.get_coverage_type_display()} (₹{int(coverage_amount):,} cover) has been submitted successfully! Your cooperative admin will review and activate it."
+        )
+        return redirect('accounts:profile')
+
+    return redirect('accounts:profile')
+
+
+

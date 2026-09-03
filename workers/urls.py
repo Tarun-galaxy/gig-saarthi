@@ -12,6 +12,8 @@ urlpatterns = [
     path('<int:pk>/', views.worker_detail, name='detail'),
     path('me/', views.my_profile, name='my_profile'),
     path('earnings/', views.worker_earnings, name='earnings'),
+    path('insurance/apply/', views.apply_insurance, name='apply_insurance'),
     path('api/ai-chat/', views.worker_ai_chat_api, name='ai_chat_api'),
     path('api/location/', views.worker_update_location, name='update_location_api'),
 ]
+

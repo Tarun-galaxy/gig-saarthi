@@ -345,10 +345,42 @@
                 </div>
             </div>
 
-            <!-- Footer Strip -->
-            <div class="px-5 py-3 bg-surface-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span>{% trans "Showing recent bookings feed" %}</span>
-                <span class="font-bold text-primary-600 dark:text-primary-400">{% trans "Auto-refreshing every 30s" %}</span>
+            <!-- Pagination Footer Strip -->
+            <div class="px-5 py-3.5 bg-surface-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium text-[11px]">
+                    {% trans "Showing" %} {{ recent_bookings.start_index|default:0 }}–{{ recent_bookings.end_index|default:0 }} {% trans "of" %} {{ recent_bookings.paginator.count|default:0 }} {% trans "live bookings" %}
+                </span>
+                
+                {% if recent_bookings.has_other_pages %}
+                <div class="flex items-center space-x-1.5">
+                    {% if recent_bookings.has_previous %}
+                    <a href="?page={{ recent_bookings.previous_page_number }}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}{% if search_q %}&search_q={{ search_q }}{% endif %}"
+                        class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs">
+                        &larr; {% trans "Prev" %}
+                    </a>
+                    {% endif %}
+
+                    {% for num in recent_bookings.paginator.page_range %}
+                        {% if recent_bookings.number == num %}
+                        <span class="px-2.5 py-1 rounded-lg bg-primary-600 text-white font-extrabold text-xs shadow-xs">{{ num }}</span>
+                        {% elif num > recent_bookings.number|add:'-3' and num < recent_bookings.number|add:'3' %}
+                        <a href="?page={{ num }}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}{% if search_q %}&search_q={{ search_q }}{% endif %}"
+                            class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs">
+                            {{ num }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if recent_bookings.has_next %}
+                    <a href="?page={{ recent_bookings.next_page_number }}{% if status_filter %}&status_filter={{ status_filter }}{% endif %}{% if search_q %}&search_q={{ search_q }}{% endif %}"
+                        class="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs">
+                        {% trans "Next" %} &rarr;
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <span class="text-[11px] font-bold text-primary-600 dark:text-primary-400">{% trans "Auto-refreshing live telemetry" %}</span>
+                {% endif %}
             </div>
         </div>
 
