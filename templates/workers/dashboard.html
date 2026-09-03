@@ -9,8 +9,12 @@
     <!-- ─── Minimalist Worker Header & Availability Indicator ─── -->
     <div class="bg-white rounded-2xl p-5 mb-5 border border-slate-200/80 shadow-subtle flex items-center justify-between">
         <div class="flex items-center space-x-3.5">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-500 text-white flex items-center justify-center text-lg font-bold shadow-xs">
+            <div class="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-tr from-primary-600 to-indigo-500 text-white flex items-center justify-center text-lg font-bold shadow-xs flex-shrink-0">
+                {% if profile.user.profile_photo %}
+                <img src="{{ profile.user.profile_photo.url }}" alt="{{ profile.user.username }}" class="w-full h-full object-cover">
+                {% else %}
                 {{ profile.user.first_name|first|default:profile.user.username|first|upper }}
+                {% endif %}
             </div>
             <div>
                 <h1 class="text-base font-extrabold text-slate-900 leading-tight">

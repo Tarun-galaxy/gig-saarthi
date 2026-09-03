@@ -297,8 +297,12 @@
                         <!-- User Profile Avatar Menu with Dropdown (Visible on Mobile & Desktop) -->
                         <div class="relative" x-data="{ showUserMenu: false }">
                             <button @click="showUserMenu = !showUserMenu" class="flex items-center space-x-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="User menu">
-                                <div class="w-9 h-9 rounded-full bg-indigo-600/20 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 flex items-center justify-center text-sm font-extrabold shadow-xs">
+                                <div class="w-9 h-9 rounded-full overflow-hidden bg-indigo-600/20 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700 flex items-center justify-center text-sm font-extrabold shadow-xs">
+                                    {% if user.profile_photo %}
+                                    <img src="{{ user.profile_photo.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
+                                    {% else %}
                                     {{ user.first_name|first|default:user.username|first|upper }}
+                                    {% endif %}
                                 </div>
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
                             </button>

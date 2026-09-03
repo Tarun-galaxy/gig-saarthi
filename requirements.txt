@@ -19,8 +19,11 @@ crispy-tailwind>=0.5
 # Configuration
 python-decouple>=3.8
 
-# File uploads
+# File uploads & Cloud Storage
 Pillow>=10.0
+cloudinary>=1.41.0
+django-cloudinary-storage>=0.3.0
+
 
 # Celery (async tasks)
 celery>=5.3

@@ -97,8 +97,12 @@
 
     <!-- Worker info row -->
     <div class="flex items-center space-x-3 mb-4">
-        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-xl ring-2 ring-green-400 animate-pulse">
+        <div class="w-12 h-12 rounded-full overflow-hidden bg-emerald-100 flex items-center justify-center text-xl ring-2 ring-emerald-400 flex-shrink-0">
+            {% if booking.worker.profile_photo %}
+            <img src="{{ booking.worker.profile_photo.url }}" alt="{{ booking.worker.get_full_name }}" class="w-full h-full object-cover">
+            {% else %}
             👷
+            {% endif %}
         </div>
         <div class="flex-1 min-w-0">
             <p class="font-bold text-gray-900" id="worker-name">{{ booking.worker.get_full_name|default:"Finding worker..." }}</p>
