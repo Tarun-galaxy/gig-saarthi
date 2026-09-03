@@ -47,6 +47,12 @@ class User(AbstractUser):
         null=True,
         help_text="User profile photo"
     )
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True,
+        help_text="User date of birth for age & ID verification"
+    )
+
 
     class Meta:
         verbose_name = 'User'

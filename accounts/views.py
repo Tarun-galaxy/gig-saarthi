@@ -16,11 +16,19 @@ User = get_user_model()
 
 # ── Registration Flow ──────────────────────────────────────────────
 
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.core.files.storage import default_storage
+
+
 def register_step1(request):
     """
-    Step 1: User fills in basic info + role selection.
+    Step 1: User fills in basic info, DOB, role selection, ID verification & profile photo.
     Session stores form data between steps.
     """
+    today = timezone.now().date()
+    max_dob_date = (today - timedelta(days=int(18 * 365.25))).strftime('%Y-%m-%d')
+
     if request.method == 'POST':
         # Validate basic fields
         first_name = request.POST.get('first_name', '').strip()
@@ -29,6 +37,9 @@ def register_step1(request):
         phone_number = request.POST.get('phone_number', '').strip()
         email = request.POST.get('email', '').strip()
         role = request.POST.get('role', 'customer')
+        dob_str = request.POST.get('date_of_birth', '').strip()
+        id_proof_type = request.POST.get('id_proof_type', '').strip()
+        id_proof_number = request.POST.get('id_proof_number', '').strip()
         password = request.POST.get('password', '')
         password_confirm = request.POST.get('password_confirm', '')
 
@@ -49,12 +60,52 @@ def register_step1(request):
         if User.objects.filter(username=username).exists():
             errors.append('This username is already taken.')
 
+        # Date of birth & age validation
+        dob_val = None
+        if dob_str:
+            try:
+                dob_val = datetime.strptime(dob_str, '%Y-%m-%d').date()
+                age = today.year - dob_val.year - ((today.month, today.day) < (dob_val.month, dob_val.day))
+                if age < 18:
+                    errors.append('You must be at least 18 years of age to register on Gig Saarthi.')
+                elif age > 110:
+                    errors.append('Please provide a valid date of birth.')
+            except ValueError:
+                errors.append('Invalid date of birth format.')
+
+        # ID Number format validation
+        if id_proof_type and id_proof_number:
+            clean_num = id_proof_number.replace(' ', '').replace('-', '').upper()
+            if id_proof_type == 'Aadhaar' and (len(clean_num) != 12 or not clean_num.isdigit()):
+                errors.append('Aadhaar number must be exactly 12 numeric digits.')
+            elif id_proof_type == 'PAN' and len(clean_num) != 10:
+                errors.append('PAN number must be exactly 10 alphanumeric characters (e.g. ABCDE1234F).')
+
+        # Handle file uploads (profile photo & ID document)
+        saved_photo_path = ''
+        saved_id_doc_path = ''
+        
+        if 'profile_photo' in request.FILES:
+            photo_file = request.FILES['profile_photo']
+            try:
+                saved_photo_path = default_storage.save(f'profiles/{username}_{photo_file.name}', photo_file)
+            except Exception as e:
+                pass
+
+        if 'id_proof_file' in request.FILES:
+            doc_file = request.FILES['id_proof_file']
+            try:
+                saved_id_doc_path = default_storage.save(f'documents/id/{username}_{doc_file.name}', doc_file)
+            except Exception as e:
+                pass
+
         if errors:
             for error in errors:
                 messages.error(request, error)
             return render(request, 'accounts/register.html', {
                 'form_data': request.POST,
-                'step': 1
+                'step': 1,
+                'max_dob_date': max_dob_date,
             })
 
         # Store in session for step 2
@@ -65,6 +116,11 @@ def register_step1(request):
             'phone_number': phone_number,
             'email': email,
             'role': role,
+            'date_of_birth': dob_str,
+            'id_proof_type': id_proof_type,
+            'id_proof_number': id_proof_number,
+            'profile_photo_path': saved_photo_path,
+            'id_proof_file_path': saved_id_doc_path,
             'password': password,
         }
 
@@ -77,7 +133,10 @@ def register_step1(request):
         messages.success(request, f'OTP sent to {phone_number}. Check the server console for the code.')
         return redirect('accounts:register_step2')
 
-    return render(request, 'accounts/register.html', {'step': 1})
+    return render(request, 'accounts/register.html', {
+        'step': 1,
+        'max_dob_date': max_dob_date,
+    })
 
 
 def register_step2(request):
@@ -108,6 +167,14 @@ def register_step2(request):
         )
 
         if success:
+            # Parse DOB if provided
+            dob_val = None
+            if registration_data.get('date_of_birth'):
+                try:
+                    dob_val = datetime.strptime(registration_data['date_of_birth'], '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
             # Create the user
             user = User.objects.create_user(
                 username=registration_data['username'],
@@ -116,10 +183,26 @@ def register_step2(request):
                 last_name=registration_data['last_name'],
                 phone_number=registration_data['phone_number'],
                 role=registration_data['role'],
+                date_of_birth=dob_val,
                 password=registration_data['password'],
             )
             user.is_phone_verified = True
-            user.save(update_fields=['is_phone_verified'])
+            
+            # Attach profile photo if uploaded during step 1
+            if registration_data.get('profile_photo_path'):
+                user.profile_photo = registration_data['profile_photo_path']
+            
+            user.save()
+
+            # Attach ID proof to worker/customer profile if uploaded
+            if user.is_worker:
+                from workers.models import WorkerProfile
+                worker_prof, _ = WorkerProfile.objects.get_or_create(user=user)
+                if registration_data.get('id_proof_type'):
+                    worker_prof.id_proof_type = registration_data['id_proof_type']
+                if registration_data.get('id_proof_file_path'):
+                    worker_prof.id_proof_file = registration_data['id_proof_file_path']
+                worker_prof.save()
 
             # Clean up session
             del request.session['registration']
@@ -130,7 +213,7 @@ def register_step2(request):
             login(request, user)
             messages.success(
                 request,
-                f'Welcome to Gig Saarthi, {user.first_name or user.username}!'
+                f'Welcome to Gig Saarthi, {user.first_name or user.username}! 🎉'
             )
 
             # Redirect based on role
@@ -138,6 +221,8 @@ def register_step2(request):
                 return redirect('workers:onboarding')
             elif user.role == 'customer':
                 return redirect('customers:onboarding')
+            return redirect('core:dashboard')
+
             return redirect('core:dashboard')
         else:
             messages.error(request, message)
@@ -385,6 +470,13 @@ def profile_edit(request):
         user.email = request.POST.get('email', user.email).strip()
         user.preferred_language = request.POST.get('preferred_language', user.preferred_language)
 
+        dob_str = request.POST.get('date_of_birth', '').strip()
+        if dob_str:
+            try:
+                user.date_of_birth = datetime.strptime(dob_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
         if 'profile_photo' in request.FILES:
             photo = request.FILES['profile_photo']
             is_valid, error = validate_file_upload(photo, 'profile_photo')
@@ -519,6 +611,7 @@ def profile_edit(request):
         'id_proof_types': id_proof_types,
         'selected_tab': selected_tab,
         'masked_account': masked_account,
+        'max_dob_date': (timezone.now().date() - timedelta(days=int(18 * 365.25))).strftime('%Y-%m-%d'),
     }
     return render(request, 'accounts/profile_edit.html', context)
 

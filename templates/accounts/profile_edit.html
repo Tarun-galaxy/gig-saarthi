@@ -86,24 +86,34 @@
                     <span>{% trans "Personal Information" %}</span>
                 </h3>
 
-                <!-- Profile Photo Uploader -->
-                <div class="flex items-center space-x-5 mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <!-- Profile Photo Uploader (Dual Option: Camera + Gallery) -->
+                <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-5 mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
                     <div class="relative group">
-                        <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-3xl font-black shadow-sm overflow-hidden" id="photo-preview-container">
+                        <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-3xl font-black shadow-sm overflow-hidden flex-shrink-0" id="photo-preview-container">
                             {% if user.profile_photo %}
-                            <img src="{{ user.profile_photo.url }}" alt="{{ user.username }}" class="w-full h-full object-cover" id="photo-preview-img">
+                            <img src="{{ user.photo_url }}" alt="{{ user.username }}" class="w-full h-full object-cover" id="photo-preview-img">
                             {% else %}
                             <span id="photo-preview-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</span>
                             {% endif %}
                         </div>
                     </div>
-                    <div>
-                        <label class="cursor-pointer inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs">
-                            <i data-lucide="camera" class="w-4 h-4 text-primary-600"></i>
-                            <span>{% trans "Upload New Photo" %}</span>
-                            <input type="file" name="profile_photo" id="profile_photo_input" accept="image/*" class="hidden" onchange="previewProfilePhoto(this)">
-                        </label>
-                        <p class="text-[11px] text-slate-400 mt-1">{% trans "JPG, PNG or WebP. Max size 2MB." %}</p>
+                    <div class="text-center sm:text-left">
+                        <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                            <!-- Live Camera / Selfie Button -->
+                            <button type="button" onclick="openProfileCameraCapture()"
+                                class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-primary-600 hover:from-indigo-700 hover:to-primary-700 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer">
+                                <span>📷</span>
+                                <span>{% trans "Take Selfie / Camera" %}</span>
+                            </button>
+
+                            <!-- Gallery / Files Button -->
+                            <label class="cursor-pointer inline-flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-xs border border-slate-200 dark:border-slate-700">
+                                <span>🖼️</span>
+                                <span>{% trans "Choose from Gallery" %}</span>
+                                <input type="file" name="profile_photo" id="profile_photo_input" accept="image/*" class="hidden" onchange="previewProfilePhoto(this)">
+                            </label>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1.5" id="profile-photo-status">{% trans "JPG, PNG or WebP. Max size 2MB." %}</p>
                     </div>
                 </div>
 
@@ -119,6 +129,23 @@
                         <input type="text" name="last_name" value="{{ user.last_name }}"
                             class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
                     </div>
+                </div>
+
+                <!-- Date of Birth & Age Verification -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            📅 {% trans "Date of Birth" %}
+                        </label>
+                        <span id="profile-age-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full {% if user.date_of_birth %}bg-emerald-100 text-emerald-800 border border-emerald-300{% else %}hidden{% endif %}">
+                            {% if user.date_of_birth %}Verified Adult{% endif %}
+                        </span>
+                    </div>
+                    <input type="date" name="date_of_birth" id="profile_date_of_birth"
+                        max="{{ max_dob_date|default:'2008-01-01' }}"
+                        value="{{ user.date_of_birth|date:'Y-m-d'|default:'' }}"
+                        onchange="validateProfileAge(this.value)"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white font-mono">
                 </div>
 
                 <!-- Email & Phone -->
@@ -730,12 +757,139 @@ function filterSkills() {
     });
 }
 
+<!-- ─── Desktop Webcam Live Capture Modal ─── -->
+<div id="profile-camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-floating border border-slate-200 dark:border-slate-800 text-center">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">📸 {% trans "Live Camera Snapshot" %}</h3>
+            <button type="button" onclick="closeProfileCameraModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+        </div>
+
+        <div class="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-black border-4 border-primary-500 shadow-card mb-4 flex items-center justify-center">
+            <video id="profile-webcam-video" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+            <div class="absolute inset-0 border-2 border-dashed border-white/60 rounded-full m-6 pointer-events-none"></div>
+        </div>
+
+        <canvas id="profile-snapshot-canvas" class="hidden"></canvas>
+
+        <div class="flex justify-center space-x-3">
+            <button type="button" onclick="closeProfileCameraModal()"
+                class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                {% trans "Cancel" %}
+            </button>
+            <button type="button" onclick="takeProfileSnapshot()"
+                class="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-extrabold shadow-md active:scale-95 transition">
+                📸 {% trans "Capture Photo" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+var activeProfileStream = null;
+
+function validateProfileAge(dobString) {
+    var ageBadge = document.getElementById('profile-age-badge');
+    if (!ageBadge) return;
+    if (!dobString) {
+        ageBadge.classList.add('hidden');
+        return;
+    }
+    var dob = new Date(dobString);
+    var today = new Date();
+    var age = today.getFullYear() - dob.getFullYear();
+    var m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+
+    ageBadge.classList.remove('hidden');
+    if (age >= 18) {
+        ageBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        ageBadge.textContent = '✅ Age: ' + age + ' yrs (Adult Verified)';
+    } else {
+        ageBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
+        ageBadge.textContent = '⚠️ Age: ' + age + ' yrs (Must be 18+)';
+    }
+}
+
+function openProfileCameraCapture() {
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        var mobileInput = document.createElement('input');
+        mobileInput.type = 'file';
+        mobileInput.accept = 'image/*';
+        mobileInput.capture = 'user';
+        mobileInput.onchange = function() {
+            if (this.files && this.files[0]) {
+                var dataTransfer = new DataTransfer();
+                dataTransfer.items.add(this.files[0]);
+                var fileInput = document.getElementById('profile_photo_input');
+                fileInput.files = dataTransfer.files;
+                previewProfilePhoto(fileInput);
+            }
+        };
+        mobileInput.click();
+        return;
+    }
+
+    var modal = document.getElementById('profile-camera-modal');
+    modal.classList.remove('hidden');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } })
+        .then(function(stream) {
+            activeProfileStream = stream;
+            document.getElementById('profile-webcam-video').srcObject = stream;
+        })
+        .catch(function(err) {
+            alert('Camera access unavailable. Please choose an image from your device.');
+            closeProfileCameraModal();
+        });
+}
+
+function closeProfileCameraModal() {
+    var modal = document.getElementById('profile-camera-modal');
+    modal.classList.add('hidden');
+    if (activeProfileStream) {
+        activeProfileStream.getTracks().forEach(function(track) { track.stop(); });
+        activeProfileStream = null;
+    }
+}
+
+function takeProfileSnapshot() {
+    var video = document.getElementById('profile-webcam-video');
+    var canvas = document.getElementById('profile-snapshot-canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    var ctx = canvas.getContext('2d');
+    
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(function(blob) {
+        var file = new File([blob], 'profile_selfie.jpg', { type: 'image/jpeg' });
+        var dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        var fileInput = document.getElementById('profile_photo_input');
+        fileInput.files = dataTransfer.files;
+        previewProfilePhoto(fileInput);
+        closeProfileCameraModal();
+        var status = document.getElementById('profile-photo-status');
+        if (status) status.innerHTML = '✅ <span class="font-bold text-emerald-600">Selfie snapshot captured</span>';
+    }, 'image/jpeg', 0.9);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // Initial Tab activation from URL query or default
     var initialTab = '{{ selected_tab|default:"basic" }}';
     switchTab(initialTab);
+
+    var dobInput = document.getElementById('profile_date_of_birth');
+    if (dobInput && dobInput.value) {
+        validateProfileAge(dobInput.value);
+    }
 
     // Customer map initialization
     {% if user.is_customer and profile_data %}

@@ -5,136 +5,411 @@
 
 {% block content %}
 <div class="min-h-[85vh] flex items-center justify-center px-4 py-12">
-    <div class="max-w-lg w-full">
+    <div class="max-w-xl w-full">
         
         <!-- Brand & Stepper Header -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 mb-3 shadow-xs">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 mb-3 shadow-xs">
                 <span class="text-2xl">🤝</span>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Gig Saarthi</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Gig Saarthi</h1>
             
             <!-- Progress Pill Stepper -->
             <div class="flex items-center justify-center mt-5 space-x-2">
-                <div class="w-7 h-7 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs font-extrabold ring-4 ring-primary-100">1</div>
-                <div class="w-12 h-1 bg-slate-200 rounded"></div>
-                <div class="w-7 h-7 bg-surface-100 text-slate-400 rounded-full flex items-center justify-center text-xs font-extrabold border border-slate-200">2</div>
+                <div class="w-7 h-7 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs font-extrabold ring-4 ring-primary-100 dark:ring-primary-950">1</div>
+                <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                <div class="w-7 h-7 bg-surface-100 dark:bg-slate-800 text-slate-400 rounded-full flex items-center justify-center text-xs font-extrabold border border-slate-200 dark:border-slate-700">2</div>
             </div>
             <div class="flex justify-between text-[11px] font-bold text-slate-400 mt-1 max-w-xs mx-auto px-4">
-                <span class="text-primary-700">{% trans "Account Profile" %}</span>
-                <span>{% trans "Phone Verification" %}</span>
+                <span class="text-primary-700 dark:text-primary-400">{% trans "Profile & Verification" %}</span>
+                <span>{% trans "OTP Confirmation" %}</span>
             </div>
         </div>
 
-        <form method="post" class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8 space-y-4">
+        <form method="post" enctype="multipart/form-data" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-8 space-y-5">
             {% csrf_token %}
 
             <!-- Role Selection Grid -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{% trans "Join platform as:" %}</label>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">{% trans "Join platform as:" %} *</label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="relative cursor-pointer">
-                        <input type="radio" name="role" value="customer"
+                        <input type="radio" name="role" value="customer" id="role-customer"
                             {% if form_data.role == 'customer' or not form_data %}checked{% endif %}
-                            class="peer sr-only">
-                        <div class="border border-slate-200 peer-checked:border-primary-600 peer-checked:bg-primary-50/50 peer-checked:ring-2 peer-checked:ring-primary-500/20 rounded-xl p-4 text-center transition-all bg-surface-50">
+                            class="peer sr-only" onchange="toggleWorkerFields()">
+                        <div class="border border-slate-200 dark:border-slate-700 peer-checked:border-primary-600 peer-checked:bg-primary-50/50 dark:peer-checked:bg-primary-950/40 peer-checked:ring-2 peer-checked:ring-primary-500/20 rounded-2xl p-4 text-center transition-all bg-surface-50 dark:bg-slate-800/60">
                             <div class="text-3xl mb-1.5">🏠</div>
-                            <p class="font-extrabold text-xs text-slate-900">{% trans "Customer / Buyer" %}</p>
-                            <p class="text-[10px] text-slate-500">{% trans "I need skilled services" %}</p>
+                            <p class="font-extrabold text-xs text-slate-900 dark:text-white">{% trans "Customer / Buyer" %}</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">{% trans "I need skilled services" %}</p>
                         </div>
                     </label>
                     <label class="relative cursor-pointer">
-                        <input type="radio" name="role" value="worker"
+                        <input type="radio" name="role" value="worker" id="role-worker"
                             {% if form_data.role == 'worker' %}checked{% endif %}
-                            class="peer sr-only">
-                        <div class="border border-slate-200 peer-checked:border-primary-600 peer-checked:bg-primary-50/50 peer-checked:ring-2 peer-checked:ring-primary-500/20 rounded-xl p-4 text-center transition-all bg-surface-50">
+                            class="peer sr-only" onchange="toggleWorkerFields()">
+                        <div class="border border-slate-200 dark:border-slate-700 peer-checked:border-primary-600 peer-checked:bg-primary-50/50 dark:peer-checked:bg-primary-950/40 peer-checked:ring-2 peer-checked:ring-primary-500/20 rounded-2xl p-4 text-center transition-all bg-surface-50 dark:bg-slate-800/60">
                             <div class="text-3xl mb-1.5">🔧</div>
-                            <p class="font-extrabold text-xs text-slate-900">{% trans "Skilled Saarthi / Worker" %}</p>
-                            <p class="text-[10px] text-slate-500">{% trans "Earn & own equity" %}</p>
+                            <p class="font-extrabold text-xs text-slate-900 dark:text-white">{% trans "Skilled Saarthi / Worker" %}</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">{% trans "Earn & own equity" %}</p>
                         </div>
                     </label>
+                </div>
+            </div>
+
+            <!-- Profile Photo Upload (Camera + Gallery Dual Action) -->
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2.5">
+                    📸 {% trans "Profile Photo / Face Picture" %}
+                </label>
+                <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                    <!-- Photo Circle Preview -->
+                    <div class="w-18 h-18 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-2xl font-black shadow-xs overflow-hidden flex-shrink-0" id="reg-photo-preview-box">
+                        <span id="reg-photo-placeholder">👤</span>
+                        <img id="reg-photo-img" src="" alt="Preview" class="w-full h-full object-cover hidden">
+                    </div>
+
+                    <!-- Dual Option Buttons -->
+                    <div class="flex-1 text-center sm:text-left">
+                        <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                            <!-- Camera / Selfie Button -->
+                            <button type="button" onclick="openCameraCapture()"
+                                class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-primary-600 hover:from-indigo-700 hover:to-primary-700 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer">
+                                <span>📷</span>
+                                <span>{% trans "Take Selfie / Camera" %}</span>
+                            </button>
+
+                            <!-- Gallery / File Chooser Button -->
+                            <label class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer border border-slate-200 dark:border-slate-700">
+                                <span>🖼️</span>
+                                <span>{% trans "Choose from Gallery" %}</span>
+                                <input type="file" name="profile_photo" id="gallery-photo-input" accept="image/*" class="hidden" onchange="handleFilePhoto(this)">
+                            </label>
+                        </div>
+                        <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1.5" id="photo-status-text">
+                            {% trans "Clear front-facing picture for identification" %}
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <!-- Name Fields Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="first_name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "First Name" %} *</label>
+                    <label for="first_name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "First Name" %} *</label>
                     <input type="text" id="first_name" name="first_name" required
                         value="{{ form_data.first_name|default:'' }}"
-                        class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition"
                         placeholder="{% trans 'Tarun' %}">
                 </div>
                 <div>
-                    <label for="last_name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Last Name" %}</label>
+                    <label for="last_name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Last Name" %}</label>
                     <input type="text" id="last_name" name="last_name"
                         value="{{ form_data.last_name|default:'' }}"
-                        class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition"
                         placeholder="{% trans 'Sharma' %}">
                 </div>
             </div>
 
-            <!-- Username -->
+            <!-- Date of Birth & Age Verification -->
             <div>
-                <label for="username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Username" %} *</label>
-                <input type="text" id="username" name="username" required
-                    value="{{ form_data.username|default:'' }}"
-                    class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
-                    placeholder="{% trans 'Choose a unique handle' %}">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="date_of_birth" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        📅 {% trans "Date of Birth (Age 18+ Verification)" %} *
+                    </label>
+                    <span id="age-badge" class="hidden text-[10px] font-extrabold px-2 py-0.5 rounded-full"></span>
+                </div>
+                <input type="date" id="date_of_birth" name="date_of_birth" required
+                    max="{{ max_dob_date|default:'2008-01-01' }}"
+                    value="{{ form_data.date_of_birth|default:'' }}"
+                    onchange="validateAndDisplayAge(this.value)"
+                    class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition font-mono">
+                <p class="text-[11px] text-slate-400 mt-1">{% trans "Members must be at least 18 years old to join the cooperative platform." %}</p>
             </div>
 
-            <!-- Phone -->
-            <div>
-                <label for="phone_number" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    {% trans "Mobile Phone Number" %} *
-                </label>
-                <input type="tel" id="phone_number" name="phone_number" required
-                    value="{{ form_data.phone_number|default:'' }}"
-                    class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition font-mono"
-                    placeholder="+91 98765 43210">
-                <p class="mt-1 text-[11px] text-slate-400">{% trans "A 6-digit OTP code will be sent to this number" %}</p>
+            <!-- Username & Mobile Phone -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="username" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Username" %} *</label>
+                    <input type="text" id="username" name="username" required
+                        value="{{ form_data.username|default:'' }}"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition"
+                        placeholder="{% trans 'Choose a unique handle' %}">
+                </div>
+                <div>
+                    <label for="phone_number" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                        📱 {% trans "Mobile Number" %} *
+                    </label>
+                    <input type="tel" id="phone_number" name="phone_number" required
+                        value="{{ form_data.phone_number|default:'' }}"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition font-mono"
+                        placeholder="+91 98765 43210">
+                </div>
             </div>
 
-            <!-- Email -->
+            <!-- Government ID Document Verification Box (Highlighted for Workers) -->
+            <div class="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 space-y-3" id="id-verification-section">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-extrabold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span>🪪</span>
+                        <span>{% trans "Government ID Proof & KYC Verification" %}</span>
+                    </h4>
+                    <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800" id="id-mandatory-tag">
+                        {% trans "Required for Workers" %}
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "ID Proof Document Type" %}</label>
+                        <select name="id_proof_type" id="id_proof_type" onchange="updateIdPlaceholder()"
+                            class="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl font-semibold text-slate-900 dark:text-white">
+                            <option value="">-- {% trans "Select Document" %} --</option>
+                            <option value="Aadhaar" {% if form_data.id_proof_type == 'Aadhaar' %}selected{% endif %}>{% trans "Aadhaar Card (12 Digits)" %}</option>
+                            <option value="PAN" {% if form_data.id_proof_type == 'PAN' %}selected{% endif %}>{% trans "PAN Card (10 Characters)" %}</option>
+                            <option value="Voter ID" {% if form_data.id_proof_type == 'Voter ID' %}selected{% endif %}>{% trans "Voter ID Card" %}</option>
+                            <option value="Driving License" {% if form_data.id_proof_type == 'Driving License' %}selected{% endif %}>{% trans "Driving License" %}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">{% trans "Document / ID Number" %}</label>
+                        <input type="text" name="id_proof_number" id="id_proof_number"
+                            value="{{ form_data.id_proof_number|default:'' }}"
+                            class="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl font-mono uppercase text-slate-900 dark:text-white"
+                            placeholder="XXXX XXXX XXXX">
+                    </div>
+                </div>
+
+                <!-- ID File Upload Area -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        {% trans "Upload Document Photo / Scan" %}
+                    </label>
+                    <label class="relative flex flex-col items-center justify-center p-4 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-2xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-slate-800 cursor-pointer transition">
+                        <span class="text-2xl mb-1">📄</span>
+                        <span class="text-xs font-bold text-primary-600 dark:text-primary-400" id="id-doc-label">
+                            {% trans "Click to select ID file (PDF, JPG, PNG)" %}
+                        </span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">{% trans "Max size 5MB" %}</span>
+                        <input type="file" name="id_proof_file" id="id_proof_file" accept=".jpg,.jpeg,.png,.pdf" class="hidden" onchange="handleDocUpload(this)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Email (Optional) -->
             <div>
-                <label for="email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Email Address (Optional)" %}</label>
+                <label for="email" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Email Address (Optional)" %}</label>
                 <input type="email" id="email" name="email"
                     value="{{ form_data.email|default:'' }}"
-                    class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
+                    class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition"
                     placeholder="name@example.com">
             </div>
 
             <!-- Password -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Password" %} *</label>
+                    <label for="password" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Password" %} *</label>
                     <input type="password" id="password" name="password" required minlength="8"
-                        class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm text-slate-900 dark:text-white transition"
                         placeholder="{% trans 'Min 8 chars' %}">
                 </div>
 
                 <div>
-                    <label for="password_confirm" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{% trans "Confirm Password" %} *</label>
+                    <label for="password_confirm" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{% trans "Confirm Password" %} *</label>
                     <input type="password" id="password_confirm" name="password_confirm" required
-                        class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm text-slate-900 transition"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm text-slate-900 dark:text-white transition"
                         placeholder="{% trans 'Repeat password' %}">
                 </div>
             </div>
 
             <button type="submit"
-                class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-sm transition active:scale-[0.99] text-xs flex items-center justify-center space-x-2 pt-3">
-                <span>{% trans "Continue to Phone Verification" %}</span>
+                class="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-md transition active:scale-[0.99] text-xs flex items-center justify-center space-x-2 pt-3">
+                <span>{% trans "Verify Details & Send OTP" %}</span>
                 <span>→</span>
             </button>
         </form>
 
-        <p class="mt-6 text-center text-xs text-slate-500">
+        <p class="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
             {% trans "Already registered?" %}
-            <a href="{% url 'accounts:login' %}" class="text-primary-600 hover:text-primary-700 font-bold ml-1">
+            <a href="{% url 'accounts:login' %}" class="text-primary-600 dark:text-primary-400 hover:underline font-extrabold ml-1">
                 {% trans "Sign In" %}
             </a>
         </p>
     </div>
 </div>
-{% endblock %}
 
+<!-- ─── Desktop Webcam Live Capture Modal ─── -->
+<div id="camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-floating border border-slate-200 dark:border-slate-800 text-center">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">📸 {% trans "Live Camera Snapshot" %}</h3>
+            <button type="button" onclick="closeCameraModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+        </div>
+
+        <!-- Video stream / target alignment guide -->
+        <div class="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-black border-4 border-primary-500 shadow-card mb-4 flex items-center justify-center">
+            <video id="webcam-video" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+            <div class="absolute inset-0 border-2 border-dashed border-white/60 rounded-full m-6 pointer-events-none"></div>
+        </div>
+
+        <canvas id="snapshot-canvas" class="hidden"></canvas>
+
+        <div class="flex justify-center space-x-3">
+            <button type="button" onclick="closeCameraModal()"
+                class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                {% trans "Cancel" %}
+            </button>
+            <button type="button" onclick="takeSnapshot()"
+                class="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-extrabold shadow-md active:scale-95 transition">
+                📸 {% trans "Capture Photo" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Live Interactive Scripts ─── -->
+<script>
+let activeStream = null;
+
+function validateAndDisplayAge(dobString) {
+    const ageBadge = document.getElementById('age-badge');
+    if (!dobString) {
+        ageBadge.classList.add('hidden');
+        return;
+    }
+    const dob = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+
+    ageBadge.classList.remove('hidden');
+    if (age >= 18) {
+        ageBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        ageBadge.textContent = `✅ Age: ${age} yrs (Verified Adult)`;
+    } else {
+        ageBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
+        ageBadge.textContent = `⚠️ Age: ${age} yrs (Must be 18+)`;
+    }
+}
+
+function toggleWorkerFields() {
+    const isWorker = document.getElementById('role-worker').checked;
+    const tag = document.getElementById('id-mandatory-tag');
+    if (tag) {
+        tag.textContent = isWorker ? '{% trans "Required for Workers" %}' : '{% trans "Recommended for Verification" %}';
+    }
+}
+
+function updateIdPlaceholder() {
+    const type = document.getElementById('id_proof_type').value;
+    const numInput = document.getElementById('id_proof_number');
+    if (type === 'Aadhaar') {
+        numInput.placeholder = '12 Digit Aadhaar (e.g. 5482 9102 3847)';
+        numInput.maxLength = 14;
+    } else if (type === 'PAN') {
+        numInput.placeholder = '10 Digit PAN (e.g. ABCDE1234F)';
+        numInput.maxLength = 10;
+    } else {
+        numInput.placeholder = 'Document Identification Number';
+        numInput.maxLength = 25;
+    }
+}
+
+function handleFilePhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('reg-photo-placeholder').classList.add('hidden');
+            const img = document.getElementById('reg-photo-img');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            document.getElementById('photo-status-text').innerHTML = `✅ <span class="font-bold text-emerald-600">${input.files[0].name}</span> selected`;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function handleDocUpload(input) {
+    if (input.files && input.files[0]) {
+        document.getElementById('id-doc-label').innerHTML = `✅ <span class="font-bold text-emerald-600">${input.files[0].name}</span> (${(input.files[0].size / 1024).toFixed(0)} KB)`;
+    }
+}
+
+// Camera / Webcam capture support
+function openCameraCapture() {
+    // Check if mobile device with native camera support
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        // Create invisible mobile capture input
+        const mobileInput = document.createElement('input');
+        mobileInput.type = 'file';
+        mobileInput.accept = 'image/*';
+        mobileInput.capture = 'user';
+        mobileInput.onchange = function() {
+            if (this.files && this.files[0]) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(this.files[0]);
+                document.getElementById('gallery-photo-input').files = dataTransfer.files;
+                handleFilePhoto(document.getElementById('gallery-photo-input'));
+            }
+        };
+        mobileInput.click();
+        return;
+    }
+
+    // Desktop live webcam modal
+    const modal = document.getElementById('camera-modal');
+    modal.classList.remove('hidden');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } })
+        .then(stream => {
+            activeStream = stream;
+            document.getElementById('webcam-video').srcObject = stream;
+        })
+        .catch(err => {
+            alert('Camera access unavailable or blocked. Please select an image file from your device.');
+            closeCameraModal();
+        });
+}
+
+function closeCameraModal() {
+    const modal = document.getElementById('camera-modal');
+    modal.classList.add('hidden');
+    if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+    }
+}
+
+function takeSnapshot() {
+    const video = document.getElementById('webcam-video');
+    const canvas = document.getElementById('snapshot-canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw flipped snapshot
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(blob => {
+        const file = new File([blob], 'selfie_capture.jpg', { type: 'image/jpeg' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        const galleryInput = document.getElementById('gallery-photo-input');
+        galleryInput.files = dataTransfer.files;
+        handleFilePhoto(galleryInput);
+        closeCameraModal();
+    }, 'image/jpeg', 0.9);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dob = document.getElementById('date_of_birth');
+    if (dob && dob.value) validateAndDisplayAge(dob.value);
+    toggleWorkerFields();
+});
+</script>
+{% endblock %}
