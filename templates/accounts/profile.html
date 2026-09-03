@@ -362,7 +362,7 @@
         {% endfor %}
 
         <!-- 2. Pending Application Status Banner (Awaiting Admin Approval) -->
-        {% if pending_insurance %}
+        {% if pending_insurance and not insurance %}
         <div class="p-5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 mb-4 shadow-xs">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="flex items-start space-x-3.5">

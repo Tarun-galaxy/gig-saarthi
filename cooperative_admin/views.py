@@ -432,7 +432,7 @@ def enroll_insurance(request, worker_id):
         now = timezone.now()
         policy_number = f"GS-COOP-{now.year}-{uuid.uuid4().hex[:6].upper()}"
 
-        WorkerInsurance.objects.create(
+        new_policy = WorkerInsurance.objects.create(
             worker=worker_profile,
             policy_number=policy_number,
             provider='Gig Saarthi Cooperative Safety Pool',
@@ -443,6 +443,9 @@ def enroll_insurance(request, worker_id):
             status='active',
             enrolled_by=request.user,
         )
+
+        # Clear any old pending requests for this worker
+        WorkerInsurance.objects.filter(worker=worker_profile, status='pending').exclude(pk=new_policy.pk).delete()
 
         messages.success(
             request,
@@ -464,6 +467,9 @@ def approve_insurance(request, policy_id):
     policy.enrolled_by = request.user
     policy.save()
 
+    # Clear any other pending requests for this worker
+    WorkerInsurance.objects.filter(worker=policy.worker, status='pending').exclude(pk=policy.pk).delete()
+
     # Notify worker
     Notification.objects.create(
         user=policy.worker.user,
@@ -474,4 +480,5 @@ def approve_insurance(request, policy_id):
 
     messages.success(request, f'✅ Policy {policy.policy_number} for {policy.worker.user.get_full_name()} has been approved and activated.')
     return redirect('cooperative_admin:insurance_management')
+
 
