@@ -81,15 +81,24 @@ class User(AbstractUser):
     @property
     def photo_url(self):
         if self.profile_photo:
-            url = str(self.profile_photo)
+            url = str(self.profile_photo).strip()
             if url.startswith('http://') or url.startswith('https://'):
                 return url
             try:
-                return self.profile_photo.url
+                p_url = self.profile_photo.url
+                if p_url.startswith('http://') or p_url.startswith('https://'):
+                    return p_url
+                from django.conf import settings
+                cloud_name = getattr(settings, 'CLOUDINARY_STORAGE', {}).get('CLOUD_NAME')
+                if cloud_name:
+                    clean_path = url.lstrip('/')
+                    return f"https://res.cloudinary.com/{cloud_name}/image/upload/{clean_path}"
+                return p_url
             except Exception:
-                return f"/media/{url}"
+                pass
         name = self.get_full_name() or self.username
         return f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true&size=128"
+
 
 
 

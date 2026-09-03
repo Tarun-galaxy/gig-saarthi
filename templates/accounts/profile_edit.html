@@ -91,7 +91,7 @@
                     <div class="relative group">
                         <div class="w-20 h-20 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-3xl font-black shadow-sm overflow-hidden flex-shrink-0" id="photo-preview-container">
                             {% if user.profile_photo %}
-                            <img src="{{ user.photo_url }}" alt="{{ user.username }}" class="w-full h-full object-cover" id="photo-preview-img">
+                            <img src="{{ user.photo_url }}" alt="{{ user.username }}" class="w-full h-full object-cover" id="photo-preview-img" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ user.username }}&background=4f46e5&color=fff&bold=true';">
                             {% else %}
                             <span id="photo-preview-placeholder">{{ user.first_name|first|default:user.username|first|upper }}</span>
                             {% endif %}
@@ -656,6 +656,34 @@
             </div>
         </div>
     </form>
+
+    <!-- ─── Desktop Webcam Live Capture Modal ─── -->
+    <div id="profile-camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-floating border border-slate-200 dark:border-slate-800 text-center">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">📸 {% trans "Live Camera Snapshot" %}</h3>
+                <button type="button" onclick="closeProfileCameraModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            </div>
+
+            <div class="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-black border-4 border-primary-500 shadow-card mb-4 flex items-center justify-center">
+                <video id="profile-webcam-video" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+                <div class="absolute inset-0 border-2 border-dashed border-white/60 rounded-full m-6 pointer-events-none"></div>
+            </div>
+
+            <canvas id="profile-snapshot-canvas" class="hidden"></canvas>
+
+            <div class="flex justify-center space-x-3">
+                <button type="button" onclick="closeProfileCameraModal()"
+                    class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                    {% trans "Cancel" %}
+                </button>
+                <button type="button" onclick="takeProfileSnapshot()"
+                    class="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-extrabold shadow-md active:scale-95 transition">
+                    📸 {% trans "Capture Photo" %}
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -663,37 +691,31 @@
 <script>
 // ─── Tab Switching Logic ───
 function switchTab(tabId) {
-    // Hide all panes
     document.querySelectorAll('.tab-pane').forEach(function(pane) {
         pane.classList.add('hidden');
     });
     
-    // Deactivate all tab buttons
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
         btn.classList.remove('bg-primary-600', 'text-white', 'shadow-sm');
         btn.classList.add('bg-white', 'dark:bg-slate-900', 'text-slate-600', 'dark:text-slate-400', 'border', 'border-slate-200/80', 'dark:border-slate-800');
     });
 
-    // Show target pane
     var targetPane = document.getElementById('tab-pane-' + tabId);
     if (targetPane) {
         targetPane.classList.remove('hidden');
     }
 
-    // Activate target button
     var targetBtn = document.getElementById('tab-btn-' + tabId);
     if (targetBtn) {
         targetBtn.classList.remove('bg-white', 'dark:bg-slate-900', 'text-slate-600', 'dark:text-slate-400', 'border', 'border-slate-200/80', 'dark:border-slate-800');
         targetBtn.classList.add('bg-primary-600', 'text-white', 'shadow-sm');
     }
 
-    // Update hidden field for post retention
     var hiddenTabInput = document.getElementById('active_tab_input');
     if (hiddenTabInput) {
         hiddenTabInput.value = tabId;
     }
 
-    // Leaflet map refresh if switching to location tab
     if (tabId === 'location' && typeof window.mapInstance !== 'undefined') {
         setTimeout(function() { window.mapInstance.invalidateSize(); }, 200);
     }
@@ -738,7 +760,9 @@ function previewProfilePhoto(input) {
         var reader = new FileReader();
         reader.onload = function(e) {
             var container = document.getElementById('photo-preview-container');
-            container.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover">';
+            container.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover" id="photo-preview-img">';
+            var status = document.getElementById('profile-photo-status');
+            if (status) status.innerHTML = '✅ <span class="font-bold text-emerald-600">' + input.files[0].name + '</span> selected';
         };
         reader.readAsDataURL(input.files[0]);
     }
@@ -757,35 +781,6 @@ function filterSkills() {
     });
 }
 
-<!-- ─── Desktop Webcam Live Capture Modal ─── -->
-<div id="profile-camera-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-floating border border-slate-200 dark:border-slate-800 text-center">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">📸 {% trans "Live Camera Snapshot" %}</h3>
-            <button type="button" onclick="closeProfileCameraModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
-        </div>
-
-        <div class="relative w-64 h-64 mx-auto rounded-3xl overflow-hidden bg-black border-4 border-primary-500 shadow-card mb-4 flex items-center justify-center">
-            <video id="profile-webcam-video" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-            <div class="absolute inset-0 border-2 border-dashed border-white/60 rounded-full m-6 pointer-events-none"></div>
-        </div>
-
-        <canvas id="profile-snapshot-canvas" class="hidden"></canvas>
-
-        <div class="flex justify-center space-x-3">
-            <button type="button" onclick="closeProfileCameraModal()"
-                class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
-                {% trans "Cancel" %}
-            </button>
-            <button type="button" onclick="takeProfileSnapshot()"
-                class="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-extrabold shadow-md active:scale-95 transition">
-                📸 {% trans "Capture Photo" %}
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
 var activeProfileStream = null;
 
 function validateProfileAge(dobString) {
@@ -882,7 +877,6 @@ function takeProfileSnapshot() {
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // Initial Tab activation from URL query or default
     var initialTab = '{{ selected_tab|default:"basic" }}';
     switchTab(initialTab);
 
@@ -891,7 +885,6 @@ document.addEventListener('DOMContentLoaded', function() {
         validateProfileAge(dobInput.value);
     }
 
-    // Customer map initialization
     {% if user.is_customer and profile_data %}
     var lat = {{ profile_data.default_latitude|default:"28.6139" }};
     var lon = {{ profile_data.default_longitude|default:"77.2090" }};
@@ -928,3 +921,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
+

@@ -32,7 +32,7 @@
                 <div class="relative group">
                     <div class="w-24 h-24 rounded-3xl overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-4xl font-black shadow-md flex-shrink-0">
                         {% if worker.user.profile_photo %}
-                        <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover">
+                        <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ worker.user.username }}&background=4f46e5&color=fff&bold=true';">
                         {% else %}
                         {{ worker.user.first_name|first|default:"W"|upper }}
                         {% endif %}
