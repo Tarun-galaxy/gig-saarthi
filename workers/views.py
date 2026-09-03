@@ -351,23 +351,9 @@ def worker_onboarding(request):
 
 @login_required
 def my_profile(request):
-    """Worker's own profile page."""
-    try:
-        profile = request.user.worker_profile
-    except WorkerProfile.DoesNotExist:
-        return redirect('workers:onboarding')
+    """Worker's own profile page — redirects to unified accounts:profile."""
+    return redirect('accounts:profile')
 
-    certifications = profile.certifications.select_related('skill').all()
-    reviews = request.user.reviews_received.select_related('customer')[:10]
-    insurance = profile.insurance_policies.filter(status='active')
-
-    context = {
-        'profile': profile,
-        'certifications': certifications,
-        'reviews': reviews,
-        'insurance': insurance,
-    }
-    return render(request, 'workers/my_profile.html', context)
 
 
 from django.views.decorators.csrf import csrf_exempt
