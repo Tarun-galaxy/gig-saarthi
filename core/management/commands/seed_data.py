@@ -6,7 +6,7 @@ Usage: python manage.py seed_data
 """
 
 import random
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -160,44 +160,46 @@ class Command(BaseCommand):
         self.stdout.write(f'  [OK] Created {SkillCategory.objects.count()} skill categories with {Skill.objects.count()} skills')
 
     def create_workers(self):
-        """Create 30 worker users with profiles."""
+        """Create 30 worker users with profiles, authentic Indian names, matched genders, and realistic portrait photos."""
         from workers.models import WorkerProfile, Skill, SkillCategory
         from cooperative_admin.models import Cooperative
 
         cooperatives = list(Cooperative.objects.all())
         all_skills = list(Skill.objects.all())
+        availabilities = ['available', 'available', 'available', 'busy', 'offline']
 
-        worker_names = [
-            ('Ramesh', 'Kumar', '+919800000001', 'Plumbing'),
-            ('Suresh', 'Patel', '+919800000002', 'Electrical'),
-            ('Dinesh', 'Yadav', '+919800000003', 'Cleaning'),
-            ('Mahesh', 'Singh', '+919800000004', 'Carpentry'),
-            ('Rakesh', 'Verma', '+919800000005', 'Plumbing'),
-            ('Mukesh', 'Joshi', '+919800000006', 'Electrical'),
-            ('Ashok', 'Meena', '+919800000007', 'Cleaning'),
-            ('Sunil', 'Chauhan', '+919800000008', 'Cooking'),
-            ('Vikash', 'Tiwari', '+919800000009', 'Elderly Care'),
-            ('Deepak', 'Rao', '+919800000010', 'Gardening'),
-            ('Rajesh', 'Pandey', '+919800000011', 'Painting'),
-            ('Manoj', 'Reddy', '+919800000012', 'Plumbing'),
-            ('Sanjay', 'Nair', '+919800000013', 'Electrical'),
-            ('Arun', 'Desai', '+919800000014', 'Carpentry'),
-            ('Vinod', 'Bhatt', '+919800000015', 'Cleaning'),
-            ('Ravi', 'Iyer', '+919800000016', 'Cooking'),
-            ('Santosh', 'Menon', '+919800000017', 'Elderly Care'),
-            ('Prakash', 'Sharma', '+919800000018', 'Gardening'),
-            ('Kamal', 'Mishra', '+919800000019', 'Painting'),
-            ('Naresh', 'Gupta', '+919800000020', 'Plumbing'),
-            ('Bharat', 'Thakur', '+919800000021', 'Electrical'),
-            ('Jagdish', 'Pillai', '+919800000022', 'Cleaning'),
-            ('Anil', 'Rao', '+919800000023', 'Carpentry'),
-            ('Raj Kumar', 'Bose', '+919800000024', 'Cooking'),
-            ('Lalit', 'Saxena', '+919800000025', 'Elderly Care'),
-            ('Harish', 'Kulkarni', '+919800000026', 'Gardening'),
-            ('Devendra', 'Chatterjee', '+919800000027', 'Painting'),
-            ('Pankaj', 'Bhatt', '+919800000028', 'Plumbing'),
-            ('Shankar', 'Prasad', '+919800000029', 'Electrical'),
-            ('Murli', 'Dubey', '+919800000030', 'Cleaning'),
+        # Curated list of Indian workers with balanced genders, trades, and matched Indian portrait photos
+        worker_specs = [
+            ('Ramesh', 'Kumar', '+919800000001', 'Plumbing', 'male', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&h=400&q=80', '1990-04-12'),
+            ('Sunita', 'Devi', '+919800000002', 'Cleaning', 'female', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80', '1993-08-25'),
+            ('Suresh', 'Patel', '+919800000003', 'Electrical', 'male', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80', '1988-11-03'),
+            ('Anita', 'Sharma', '+919800000004', 'Cooking', 'female', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&h=400&q=80', '1995-02-18'),
+            ('Dinesh', 'Yadav', '+919800000005', 'Carpentry', 'male', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80', '1992-07-30'),
+            ('Pooja', 'Gupta', '+919800000006', 'Elderly Care', 'female', 'https://images.unsplash.com/photo-1534751516642-a171edd29974?auto=format&fit=crop&w=400&h=400&q=80', '1996-09-14'),
+            ('Mahesh', 'Singh', '+919800000007', 'Painting', 'male', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&h=400&q=80', '1987-03-22'),
+            ('Kavita', 'Verma', '+919800000008', 'Cooking', 'female', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&h=400&q=80', '1994-06-19'),
+            ('Rakesh', 'Sharma', '+919800000009', 'Plumbing', 'male', 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&h=400&q=80', '1991-12-05'),
+            ('Geeta', 'Meena', '+919800000010', 'Cleaning', 'female', 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&h=400&q=80', '1997-01-11'),
+            ('Mukesh', 'Joshi', '+919800000011', 'Electrical', 'male', 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=400&h=400&q=80', '1989-05-27'),
+            ('Rekha', 'Devi', '+919800000012', 'Elderly Care', 'female', 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&h=400&q=80', '1990-10-08'),
+            ('Ashok', 'Meena', '+919800000013', 'Gardening', 'male', 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=400&h=400&q=80', '1986-08-16'),
+            ('Sangeeta', 'Nair', '+919800000014', 'Cooking', 'female', 'https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=400&h=400&q=80', '1993-04-29'),
+            ('Sunil', 'Chauhan', '+919800000015', 'Carpentry', 'male', 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=400&q=80', '1992-02-14'),
+            ('Priya', 'Rao', '+919800000016', 'Elderly Care', 'female', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80', '1995-11-23'),
+            ('Vikash', 'Tiwari', '+919800000017', 'Painting', 'male', 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=400&h=400&q=80', '1990-09-02'),
+            ('Meena', 'Iyer', '+919800000018', 'Cleaning', 'female', 'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&w=400&h=400&q=80', '1996-05-15'),
+            ('Deepak', 'Rao', '+919800000019', 'Gardening', 'male', 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&h=400&q=80', '1988-06-20'),
+            ('Naresh', 'Gupta', '+919800000020', 'Plumbing', 'male', 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=400&h=400&q=80', '1991-03-10'),
+            ('Bharat', 'Thakur', '+919800000021', 'Electrical', 'male', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=400&q=80', '1994-01-28'),
+            ('Jagdish', 'Pillai', '+919800000022', 'Carpentry', 'male', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&h=400&q=80', '1985-07-19'),
+            ('Anil', 'Rao', '+919800000023', 'Carpentry', 'male', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=400&q=80', '1992-10-04'),
+            ('Raj Kumar', 'Bose', '+919800000024', 'Painting', 'male', 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=400&h=400&q=80', '1989-12-17'),
+            ('Lalit', 'Saxena', '+919800000025', 'Electrical', 'male', 'https://images.unsplash.com/photo-1530268729831-4b0b9e170218?auto=format&fit=crop&w=400&h=400&q=80', '1993-08-09'),
+            ('Harish', 'Kulkarni', '+919800000026', 'Gardening', 'male', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80', '1987-11-25'),
+            ('Devendra', 'Chatterjee', '+919800000027', 'Painting', 'male', 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=400&h=400&q=80', '1990-02-14'),
+            ('Pankaj', 'Bhatt', '+919800000028', 'Plumbing', 'male', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&h=400&q=80', '1994-07-21'),
+            ('Shankar', 'Prasad', '+919800000029', 'Electrical', 'male', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80', '1986-04-03'),
+            ('Murli', 'Dubey', '+919800000030', 'Cleaning', 'male', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80', '1995-12-30'),
         ]
 
         # Delhi NCR approximate coordinates
@@ -214,61 +216,33 @@ class Command(BaseCommand):
             (28.6260, 77.2430), (28.5082, 77.3890), (28.7230, 77.1180),
         ]
 
-        worker_avatars = [
-            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1534751516642-a171edd29974?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1530268729831-4b0b9e170218?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1586297135537-94bc9ba060aa?auto=format&fit=crop&w=300&h=300&q=80',
-        ]
-
-        for i, (first_name, last_name, phone, primary_category) in enumerate(worker_names):
+        for i, (first_name, last_name, phone, primary_category, gender, avatar_url, dob_str) in enumerate(worker_specs):
             username = f'worker_{i+1:03d}'
-            avatar_url = worker_avatars[i % len(worker_avatars)]
+            dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
             
             user = User.objects.filter(username=username).first()
             if user:
+                user.first_name = first_name
+                user.last_name = last_name
+                user.gender = gender
+                user.date_of_birth = dob
                 user.profile_photo = avatar_url
-                user.save(update_fields=['profile_photo'])
-                continue
-
-            user = User.objects.create_user(
-                username=username,
-                email=f'{username}@gigsaarthi.in',
-                first_name=first_name,
-                last_name=last_name,
-                phone_number=phone,
-                role='worker',
-                password='worker123',
-                profile_photo=avatar_url,
-                is_phone_verified=True,
-                preferred_language=random.choice(['en', 'hi']),
-            )
+                user.save()
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    email=f'{username}@gigsaarthi.in',
+                    first_name=first_name,
+                    last_name=last_name,
+                    phone_number=phone,
+                    role='worker',
+                    gender=gender,
+                    date_of_birth=dob,
+                    password='worker123',
+                    profile_photo=avatar_url,
+                    is_phone_verified=True,
+                    preferred_language=random.choice(['en', 'hi']),
+                )
 
             # Get skills from primary category + some random extras
             primary_skills = Skill.objects.filter(category__name=primary_category)[:2]
@@ -276,70 +250,50 @@ class Command(BaseCommand):
             worker_skills = list(set(list(primary_skills) + extra_skills))
 
             lat, lng = locations[i % len(locations)]
-            # Add slight randomness to location
             lat += random.uniform(-0.02, 0.02)
             lng += random.uniform(-0.02, 0.02)
 
-            profile = WorkerProfile.objects.create(
-                user=user,
-                experience_years=random.randint(1, 15),
-                cooperative=random.choice(cooperatives),
-                bio=f'Experienced {primary_category.lower()} professional with {random.randint(1, 15)} years of expertise.',
-                availability_status=random.choice(availabilities),
-                current_latitude=round(lat, 6),
-                current_longitude=round(lng, 6),
-                avg_rating=round(random.uniform(3.5, 5.0), 2),
-                total_jobs_completed=random.randint(5, 200),
-                total_reviews=random.randint(3, 50),
-                is_verified=random.choice([True, True, True, False]),
-                id_proof_type=random.choice(['Aadhaar', 'PAN', 'Voter ID']),
-                bank_account_number=f'{random.randint(1000000000, 9999999999)}',
-                bank_ifsc_code=f'{"SBIN"}{random.randint(100000, 999999)}',
-                bank_name=random.choice(['SBI', 'HDFC', 'ICICI', 'PNB', 'BOB']),
-                upi_id=f'{username}@paytm',
-            )
+            profile, _ = WorkerProfile.objects.get_or_create(user=user)
+            profile.experience_years = random.randint(2, 15)
+            profile.cooperative = random.choice(cooperatives)
+            profile.bio = f'Experienced {primary_category.lower()} professional with expertise in reliable household services.'
+            profile.availability_status = random.choice(availabilities)
+            profile.current_latitude = round(lat, 6)
+            profile.current_longitude = round(lng, 6)
+            profile.avg_rating = round(random.uniform(4.0, 5.0), 1)
+            profile.total_jobs_completed = random.randint(12, 180)
+            profile.total_reviews = random.randint(5, 45)
+            profile.is_verified = True
+            profile.id_proof_type = random.choice(['Aadhaar Card', 'PAN Card', 'Voter ID'])
+            profile.bank_account_number = f'{random.randint(1000000000, 9999999999)}'
+            profile.bank_ifsc_code = f'{"SBIN"}{random.randint(100000, 999999)}'
+            profile.bank_name = random.choice(['State Bank of India', 'HDFC Bank', 'ICICI Bank', 'Punjab National Bank'])
+            profile.upi_id = f'{phone.replace("+91", "")}@upi'
+            profile.save()
             profile.skills.set(worker_skills)
 
-        self.stdout.write(f'  [OK] Created {len(worker_names)} workers with profiles & realistic avatars')
+        self.stdout.write(f'  [OK] Created/Updated {len(worker_specs)} workers with authentic Indian names, genders & portraits')
 
     def create_customers(self):
-        """Create 15 customer users with profiles."""
+        """Create 15 customer users with profiles, authentic Indian names, and matched portraits."""
         from customers.models import CustomerProfile
 
-        customer_data = [
-            ('Priyanka', 'Sharma', '+919700000001'),
-            ('Anjali', 'Mehta', '+919700000002'),
-            ('Rahul', 'Aggarwal', '+919700000003'),
-            ('Neha', 'Sinha', '+919700000004'),
-            ('Vishal', 'Choudhary', '+919700000005'),
-            ('Kavita', 'Rao', '+919700000006'),
-            ('Amit', 'Bansal', '+919700000007'),
-            ('Shweta', 'Malhotra', '+919700000008'),
-            ('Deepak', 'Sethi', '+919700000009'),
-            ('Ritu', 'Kapoor', '+919700000010'),
-            ('Manish', 'Jain', '+919700000011'),
-            ('Pooja', 'Agarwal', '+919700000012'),
-            ('Sachin', 'Tiwari', '+919700000013'),
-            ('Divya', 'Bhatnagar', '+919700000014'),
-            ('Karan', 'Mehra', '+919700000015'),
-        ]
-
-        customer_avatars = [
-            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&h=300&q=80',
-            'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=300&h=300&q=80',
+        customer_specs = [
+            ('Priyanka', 'Sharma', '+919700000001', 'female', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&h=400&q=80', '1995-03-12'),
+            ('Anjali', 'Mehta', '+919700000002', 'female', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&h=400&q=80', '1994-07-20'),
+            ('Rahul', 'Aggarwal', '+919700000003', 'male', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80', '1991-11-04'),
+            ('Neha', 'Sinha', '+919700000004', 'female', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&h=400&q=80', '1996-01-19'),
+            ('Vishal', 'Choudhary', '+919700000005', 'male', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&h=400&q=80', '1989-08-15'),
+            ('Kavita', 'Rao', '+919700000006', 'female', 'https://images.unsplash.com/photo-1534751516642-a171edd29974?auto=format&fit=crop&w=400&h=400&q=80', '1993-05-28'),
+            ('Amit', 'Bansal', '+919700000007', 'male', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&h=400&q=80', '1990-10-10'),
+            ('Shweta', 'Malhotra', '+919700000008', 'female', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&h=400&q=80', '1997-04-03'),
+            ('Deepak', 'Sethi', '+919700000009', 'male', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&h=400&q=80', '1988-12-22'),
+            ('Ritu', 'Kapoor', '+919700000010', 'female', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&h=400&q=80', '1992-09-07'),
+            ('Manish', 'Jain', '+919700000011', 'male', 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=400&h=400&q=80', '1987-06-18'),
+            ('Pooja', 'Agarwal', '+919700000012', 'female', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&h=400&q=80', '1995-08-30'),
+            ('Sachin', 'Tiwari', '+919700000013', 'male', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&h=400&q=80', '1993-02-14'),
+            ('Divya', 'Bhatnagar', '+919700000014', 'female', 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&h=400&q=80', '1996-12-01'),
+            ('Karan', 'Mehra', '+919700000015', 'male', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&h=400&q=80', '1991-05-25'),
         ]
 
         addresses = [
@@ -360,40 +314,39 @@ class Command(BaseCommand):
             '45, Malviya Nagar, New Delhi 110017',
         ]
 
-        for i, (first_name, last_name, phone) in enumerate(customer_data):
+        for i, (first_name, last_name, phone, gender, avatar_url, dob_str) in enumerate(customer_specs):
             username = f'customer_{i+1:03d}'
-            avatar_url = customer_avatars[i % len(customer_avatars)]
+            dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
             
             user = User.objects.filter(username=username).first()
             if user:
+                user.first_name = first_name
+                user.last_name = last_name
+                user.gender = gender
+                user.date_of_birth = dob
                 user.profile_photo = avatar_url
-                user.save(update_fields=['profile_photo'])
-                continue
+                user.save()
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    email=f'{username}@example.com',
+                    first_name=first_name,
+                    last_name=last_name,
+                    phone_number=phone,
+                    role='customer',
+                    gender=gender,
+                    date_of_birth=dob,
+                    password='customer123',
+                    profile_photo=avatar_url,
+                    is_phone_verified=True,
+                    preferred_language=random.choice(['en', 'hi']),
+                )
 
-            user = User.objects.create_user(
-                username=username,
-                email=f'{username}@gigsaarthi.in',
-                first_name=first_name,
-                last_name=last_name,
-                phone_number=phone,
-                role='customer',
-                password='customer123',
-                profile_photo=avatar_url,
-                is_phone_verified=True,
-            )
+            profile, _ = CustomerProfile.objects.get_or_create(user=user)
+            profile.default_address = addresses[i % len(addresses)]
+            profile.save()
 
-            # Delhi NCR coordinates for customers
-            lat = round(28.6139 + random.uniform(-0.05, 0.05), 6)
-            lng = round(77.2090 + random.uniform(-0.05, 0.05), 6)
-
-            CustomerProfile.objects.create(
-                user=user,
-                default_address=addresses[i % len(addresses)],
-                default_latitude=lat,
-                default_longitude=lng,
-            )
-
-        self.stdout.write(f'  [OK] Created {len(customer_data)} customers with profiles & realistic avatars')
+        self.stdout.write(f'  [OK] Created/Updated {len(customer_specs)} customers with authentic Indian names, genders & portraits')
 
     def create_service_categories(self):
         """Create service categories."""

@@ -131,21 +131,36 @@
                     </div>
                 </div>
 
-                <!-- Date of Birth & Age Verification -->
-                <div class="mb-4">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            📅 {% trans "Date of Birth" %}
-                        </label>
-                        <span id="profile-age-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full {% if user.date_of_birth %}bg-emerald-100 text-emerald-800 border border-emerald-300{% else %}hidden{% endif %}">
-                            {% if user.date_of_birth %}Verified Adult{% endif %}
-                        </span>
+                <!-- Date of Birth & Gender Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                📅 {% trans "Date of Birth" %}
+                            </label>
+                            <span id="profile-age-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full {% if user.date_of_birth %}bg-emerald-100 text-emerald-800 border border-emerald-300{% else %}hidden{% endif %}">
+                                {% if user.date_of_birth %}Verified Adult{% endif %}
+                            </span>
+                        </div>
+                        <input type="date" name="date_of_birth" id="profile_date_of_birth"
+                            max="{{ max_dob_date|default:'2008-01-01' }}"
+                            value="{{ user.date_of_birth|date:'Y-m-d'|default:'' }}"
+                            onchange="validateProfileAge(this.value)"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white font-mono">
                     </div>
-                    <input type="date" name="date_of_birth" id="profile_date_of_birth"
-                        max="{{ max_dob_date|default:'2008-01-01' }}"
-                        value="{{ user.date_of_birth|date:'Y-m-d'|default:'' }}"
-                        onchange="validateProfileAge(this.value)"
-                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white font-mono">
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                            👤 {% trans "Gender Identity" %}
+                        </label>
+                        <select name="gender"
+                            class="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-surface-50 dark:bg-slate-950 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white">
+                            <option value="">{% trans "Select Gender" %}</option>
+                            <option value="male" {% if user.gender == 'male' %}selected{% endif %}>👨 {% trans "Male / पुरुष" %}</option>
+                            <option value="female" {% if user.gender == 'female' %}selected{% endif %}>👩 {% trans "Female / महिला" %}</option>
+                            <option value="other" {% if user.gender == 'other' %}selected{% endif %}>⚧️ {% trans "Other / अन्य" %}</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Email & Phone -->

@@ -110,20 +110,34 @@
                 </div>
             </div>
 
-            <!-- Date of Birth & Age Verification -->
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label for="date_of_birth" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        📅 {% trans "Date of Birth (Age 18+ Verification)" %} *
-                    </label>
-                    <span id="age-badge" class="hidden text-[10px] font-extrabold px-2 py-0.5 rounded-full"></span>
+            <!-- Date of Birth & Gender Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="date_of_birth" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                            📅 {% trans "Date of Birth (18+)" %} *
+                        </label>
+                        <span id="age-badge" class="hidden text-[10px] font-extrabold px-2 py-0.5 rounded-full"></span>
+                    </div>
+                    <input type="date" id="date_of_birth" name="date_of_birth" required
+                        max="{{ max_dob_date|default:'2008-01-01' }}"
+                        value="{{ form_data.date_of_birth|default:'' }}"
+                        onchange="validateAndDisplayAge(this.value)"
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition font-mono">
                 </div>
-                <input type="date" id="date_of_birth" name="date_of_birth" required
-                    max="{{ max_dob_date|default:'2008-01-01' }}"
-                    value="{{ form_data.date_of_birth|default:'' }}"
-                    onchange="validateAndDisplayAge(this.value)"
-                    class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition font-mono">
-                <p class="text-[11px] text-slate-400 mt-1">{% trans "Members must be at least 18 years old to join the cooperative platform." %}</p>
+
+                <div>
+                    <label for="gender" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                        👤 {% trans "Gender Identity" %} *
+                    </label>
+                    <select id="gender" name="gender" required
+                        class="w-full px-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm font-semibold text-slate-900 dark:text-white transition">
+                        <option value="">{% trans "Select Gender" %}</option>
+                        <option value="male" {% if form_data.gender == 'male' %}selected{% endif %}>👨 {% trans "Male / पुरुष" %}</option>
+                        <option value="female" {% if form_data.gender == 'female' %}selected{% endif %}>👩 {% trans "Female / महिला" %}</option>
+                        <option value="other" {% if form_data.gender == 'other' %}selected{% endif %}>⚧️ {% trans "Other / अन्य" %}</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Username & Mobile Phone -->

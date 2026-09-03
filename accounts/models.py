@@ -20,11 +20,24 @@ class User(AbstractUser):
         ('bn', 'Bengali'),
     ]
 
+    GENDER_CHOICES = [
+        ('male', 'Male / पुरुष'),
+        ('female', 'Female / महिला'),
+        ('other', 'Other / अन्य'),
+    ]
+
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
         default='customer',
         help_text="User role in the platform"
+    )
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDER_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Gender identity"
     )
     phone_number = models.CharField(
         max_length=15,

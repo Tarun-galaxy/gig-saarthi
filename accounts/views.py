@@ -37,6 +37,7 @@ def register_step1(request):
         phone_number = request.POST.get('phone_number', '').strip()
         email = request.POST.get('email', '').strip()
         role = request.POST.get('role', 'customer')
+        gender = request.POST.get('gender', '').strip()
         dob_str = request.POST.get('date_of_birth', '').strip()
         id_proof_type = request.POST.get('id_proof_type', '').strip()
         id_proof_number = request.POST.get('id_proof_number', '').strip()
@@ -116,6 +117,7 @@ def register_step1(request):
             'phone_number': phone_number,
             'email': email,
             'role': role,
+            'gender': gender,
             'date_of_birth': dob_str,
             'id_proof_type': id_proof_type,
             'id_proof_number': id_proof_number,
@@ -183,6 +185,7 @@ def register_step2(request):
                 last_name=registration_data['last_name'],
                 phone_number=registration_data['phone_number'],
                 role=registration_data['role'],
+                gender=registration_data.get('gender', ''),
                 date_of_birth=dob_val,
                 password=registration_data['password'],
             )
@@ -469,6 +472,10 @@ def profile_edit(request):
         user.last_name = request.POST.get('last_name', user.last_name).strip()
         user.email = request.POST.get('email', user.email).strip()
         user.preferred_language = request.POST.get('preferred_language', user.preferred_language)
+
+        gender_val = request.POST.get('gender', '').strip()
+        if gender_val in ('male', 'female', 'other'):
+            user.gender = gender_val
 
         dob_str = request.POST.get('date_of_birth', '').strip()
         if dob_str:
