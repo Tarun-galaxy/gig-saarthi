@@ -4,7 +4,7 @@
 {% block title %}{% trans "Admin Saarthis Directory" %} — Gig Saarthi{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10" x-data="{ currentView: '{{ view_mode|default:'grid' }}' }">
     
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -41,7 +41,7 @@
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-subtle mb-6">
         <div class="flex items-center space-x-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin">
             <!-- All Categories Tab -->
-            <a href="?category=all{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+            <a href="?category=all{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}&view={{ view_mode }}"
                 class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all shadow-2xs
                 {% if not selected_category or selected_category == 'all' %}
                 bg-primary-600 text-white shadow-sm scale-[1.02]
@@ -57,7 +57,7 @@
 
             <!-- Individual Trade Categories -->
             {% for cat in categories %}
-            <a href="?category={{ cat.name }}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+            <a href="?category={{ cat.name }}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}&view={{ view_mode }}"
                 class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all shadow-2xs
                 {% if selected_category == cat.name %}
                 bg-primary-600 text-white shadow-sm scale-[1.02]
@@ -75,11 +75,12 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
-         2. Filter & Search Toolbar
+         2. Filter & Search Toolbar with Grid / Table View Switcher
          ═══════════════════════════════════════════════════════════ -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-subtle mb-8">
         <form method="get" class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             <input type="hidden" name="category" value="{{ selected_category|default:'all' }}">
+            <input type="hidden" name="view" :value="currentView">
 
             <!-- Search Input -->
             <div class="relative flex-1">
@@ -90,7 +91,7 @@
             </div>
 
             <!-- Availability Dropdown -->
-            <div class="w-full sm:w-48">
+            <div class="w-full sm:w-44">
                 <select name="availability" class="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500">
                     <option value="">{% trans "All Availability" %}</option>
                     <option value="available" {% if availability == 'available' %}selected{% endif %}>🟢 {% trans "Online / Ready" %}</option>
@@ -100,7 +101,7 @@
             </div>
 
             <!-- Sort By -->
-            <div class="w-full sm:w-48">
+            <div class="w-full sm:w-44">
                 <select name="sort" class="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500">
                     <option value="-avg_rating" {% if sort_by == '-avg_rating' %}selected{% endif %}>⭐ {% trans "Top Rated First" %}</option>
                     <option value="-total_jobs_completed" {% if sort_by == '-total_jobs_completed' %}selected{% endif %}>🏆 {% trans "Most Jobs Completed" %}</option>
@@ -108,19 +109,37 @@
                 </select>
             </div>
 
-            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition active:scale-[0.98]">
+            <!-- View Layout Toggle (Grid vs Table) -->
+            <div class="inline-flex items-center p-1 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xs">
+                <button type="button" @click="currentView = 'grid'"
+                    :class="currentView === 'grid' ? 'bg-primary-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition active:scale-95"
+                    title="Grid View">
+                    <span>⊞</span>
+                    <span class="hidden sm:inline">{% trans "Grid" %}</span>
+                </button>
+                <button type="button" @click="currentView = 'table'"
+                    :class="currentView === 'table' ? 'bg-primary-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition active:scale-95"
+                    title="Table / Details View">
+                    <span>☰</span>
+                    <span class="hidden sm:inline">{% trans "Table" %}</span>
+                </button>
+            </div>
+
+            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition active:scale-[0.98]">
                 {% trans "Filter Results" %}
             </button>
 
             {% if selected_category or search_query or availability %}
-            <a href="{% url 'workers:list' %}" class="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold text-center transition">
+            <a href="{% url 'workers:list' %}?view={{ view_mode }}" class="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold text-center transition">
                 ✕ {% trans "Reset" %}
             </a>
             {% endif %}
         </form>
     </div>
 
-    <!-- Active Filter Badge -->
+    <!-- Active Filter Status -->
     <div class="flex items-center justify-between mb-4">
         <p class="text-xs font-bold text-slate-500 dark:text-slate-400">
             Showing <span class="font-extrabold text-slate-900 dark:text-white">{{ workers|length }}</span> of <span class="font-extrabold text-slate-900 dark:text-white">{{ paginator.count }}</span> Saarthis
@@ -130,9 +149,9 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
-         3. Worker Cards Grid
+         3A. Grid View (Cards Style)
          ═══════════════════════════════════════════════════════════ -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div x-show="currentView === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {% for worker in workers %}
         <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 shadow-subtle hover:shadow-card transition-all p-5 flex flex-col justify-between group">
             <div>
@@ -236,11 +255,127 @@
             <p class="text-4xl mb-3">🔍</p>
             <h3 class="text-base font-extrabold text-slate-800 dark:text-white mb-1">{% trans "No Saarthis found" %}</h3>
             <p class="text-xs text-slate-500">{% trans "No workers match the selected category or filters. Try clearing search filters." %}</p>
-            <a href="{% url 'workers:list' %}" class="mt-4 inline-block px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold">
-                {% trans "View All Workers" %}
-            </a>
         </div>
         {% endfor %}
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         3B. Table / Details View (Matching Booking Ref Layout)
+         ═══════════════════════════════════════════════════════════ -->
+    <div x-show="currentView === 'table'" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-surface-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                    <tr>
+                        <th class="px-5 py-3.5">{% trans "Saarthi / Worker" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Contact & Cooperative" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Skills & Trade Categories" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Experience & Jobs" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Rating" %}</th>
+                        <th class="px-5 py-3.5">{% trans "Status" %}</th>
+                        <th class="px-5 py-3.5 text-right">{% trans "Action" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for worker in workers %}
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                        <!-- Worker Profile & Photo -->
+                        <td class="px-5 py-4">
+                            <div class="flex items-center space-x-3.5">
+                                <div class="w-11 h-11 rounded-2xl overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center font-black text-sm shadow-xs flex-shrink-0">
+                                    {% if worker.user.profile_photo %}
+                                    <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    {{ worker.user.first_name|first|default:"W"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-1.5">
+                                        <a href="{% url 'workers:detail' pk=worker.pk %}" class="font-extrabold text-sm text-slate-900 dark:text-white hover:text-primary-600 transition-colors">
+                                            {{ worker.user.get_full_name|default:worker.user.username }}
+                                        </a>
+                                        {% if worker.is_verified %}
+                                        <span class="text-emerald-600 text-xs" title="Verified">✅</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-[11px] font-mono text-slate-400">@{{ worker.user.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Contact & Cooperative -->
+                        <td class="px-5 py-4">
+                            <div>
+                                <a href="tel:{{ worker.user.phone_number }}" class="font-mono font-bold text-slate-900 dark:text-white hover:text-primary-600 block">
+                                    📱 {{ worker.user.phone_number }}
+                                </a>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[180px]" title="{{ worker.cooperative.name }}">
+                                    🏢 {{ worker.cooperative.name|default:"Direct" }}
+                                </p>
+                            </div>
+                        </td>
+
+                        <!-- Trade Skills -->
+                        <td class="px-5 py-4">
+                            <div class="flex flex-wrap gap-1 max-w-xs">
+                                {% for skill in worker.skills.all|slice:":3" %}
+                                <span class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-md text-[10px] font-bold border border-indigo-100 dark:border-indigo-900">
+                                    {{ skill.name }}
+                                </span>
+                                {% endfor %}
+                                {% if worker.skills.count > 3 %}
+                                <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md text-[10px] font-bold">
+                                    +{{ worker.skills.count|add:"-3" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Experience & Completed Jobs -->
+                        <td class="px-5 py-4">
+                            <p class="font-bold text-slate-800 dark:text-slate-200">{{ worker.experience_years }} {% trans "years exp" %}</p>
+                            <p class="text-[11px] text-primary-600 dark:text-primary-400 font-extrabold mt-0.5">🏆 {{ worker.total_jobs_completed }} {% trans "jobs" %}</p>
+                        </td>
+
+                        <!-- Rating -->
+                        <td class="px-5 py-4">
+                            <div class="flex items-center space-x-1">
+                                <span class="text-amber-500 font-extrabold text-sm">⭐ {{ worker.avg_rating|floatformat:1 }}</span>
+                            </div>
+                            <p class="text-[10.5px] text-slate-400 font-medium">({{ worker.total_reviews }} reviews)</p>
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td class="px-5 py-4">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10.5px] font-extrabold border
+                                {% if worker.availability_status == 'available' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                                {% elif worker.availability_status == 'busy' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                                {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700{% endif %}">
+                                {% if worker.availability_status == 'available' %}● {% trans "Online" %}
+                                {% elif worker.availability_status == 'busy' %}⏳ {% trans "Busy" %}
+                                {% else %}⚪ {% trans "Offline" %}{% endif %}
+                            </span>
+                        </td>
+
+                        <!-- View Profile Action Button -->
+                        <td class="px-5 py-4 text-right">
+                            <a href="{% url 'workers:detail' pk=worker.pk %}"
+                                class="inline-flex items-center space-x-1 px-3.5 py-1.5 rounded-xl bg-surface-50 dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-950 text-slate-700 dark:text-slate-300 hover:text-primary-600 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition shadow-2xs">
+                                <span>{% trans "View" %}</span>
+                                <span>→</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-5 py-10 text-center text-slate-400">
+                            {% trans "No Saarthis found matching your selected criteria." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -250,7 +385,7 @@
     <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 mt-8 pt-6">
         <div>
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}&view={{ view_mode }}"
                 class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <span>←</span>
                 <span>{% trans "Previous" %}</span>
@@ -270,7 +405,7 @@
                     {{ num }}
                 </span>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}&view={{ view_mode }}"
                     class="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center transition">
                     {{ num }}
                 </a>
@@ -280,7 +415,7 @@
 
         <div>
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}&view={{ view_mode }}"
                 class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                 <span>{% trans "Next" %}</span>
                 <span>→</span>
