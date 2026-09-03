@@ -214,11 +214,47 @@ class Command(BaseCommand):
             (28.6260, 77.2430), (28.5082, 77.3890), (28.7230, 77.1180),
         ]
 
-        availabilities = ['available', 'available', 'available', 'busy', 'offline']
+        worker_avatars = [
+            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1534751516642-a171edd29974?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1509783236416-c9ad59bae472?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1530268729831-4b0b9e170218?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1586297135537-94bc9ba060aa?auto=format&fit=crop&w=300&h=300&q=80',
+        ]
 
         for i, (first_name, last_name, phone, primary_category) in enumerate(worker_names):
             username = f'worker_{i+1:03d}'
-            if User.objects.filter(username=username).exists():
+            avatar_url = worker_avatars[i % len(worker_avatars)]
+            
+            user = User.objects.filter(username=username).first()
+            if user:
+                user.profile_photo = avatar_url
+                user.save(update_fields=['profile_photo'])
                 continue
 
             user = User.objects.create_user(
@@ -229,6 +265,7 @@ class Command(BaseCommand):
                 phone_number=phone,
                 role='worker',
                 password='worker123',
+                profile_photo=avatar_url,
                 is_phone_verified=True,
                 preferred_language=random.choice(['en', 'hi']),
             )
@@ -263,7 +300,7 @@ class Command(BaseCommand):
             )
             profile.skills.set(worker_skills)
 
-        self.stdout.write(f'  [OK] Created {len(worker_names)} workers with profiles')
+        self.stdout.write(f'  [OK] Created {len(worker_names)} workers with profiles & realistic avatars')
 
     def create_customers(self):
         """Create 15 customer users with profiles."""
@@ -287,6 +324,24 @@ class Command(BaseCommand):
             ('Karan', 'Mehra', '+919700000015'),
         ]
 
+        customer_avatars = [
+            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&h=300&q=80',
+            'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=300&h=300&q=80',
+        ]
+
         addresses = [
             '42, Hauz Khas Village, New Delhi 110016',
             '15, Sector 44, Gurugram 122003',
@@ -307,7 +362,12 @@ class Command(BaseCommand):
 
         for i, (first_name, last_name, phone) in enumerate(customer_data):
             username = f'customer_{i+1:03d}'
-            if User.objects.filter(username=username).exists():
+            avatar_url = customer_avatars[i % len(customer_avatars)]
+            
+            user = User.objects.filter(username=username).first()
+            if user:
+                user.profile_photo = avatar_url
+                user.save(update_fields=['profile_photo'])
                 continue
 
             user = User.objects.create_user(
@@ -318,6 +378,7 @@ class Command(BaseCommand):
                 phone_number=phone,
                 role='customer',
                 password='customer123',
+                profile_photo=avatar_url,
                 is_phone_verified=True,
             )
 
@@ -332,7 +393,7 @@ class Command(BaseCommand):
                 default_longitude=lng,
             )
 
-        self.stdout.write(f'  [OK] Created {len(customer_data)} customers with profiles')
+        self.stdout.write(f'  [OK] Created {len(customer_data)} customers with profiles & realistic avatars')
 
     def create_service_categories(self):
         """Create service categories."""

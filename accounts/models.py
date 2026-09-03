@@ -75,8 +75,16 @@ class User(AbstractUser):
     @property
     def photo_url(self):
         if self.profile_photo:
-            return self.profile_photo.url
-        return '/static/images/default-avatar.png'
+            url = str(self.profile_photo)
+            if url.startswith('http://') or url.startswith('https://'):
+                return url
+            try:
+                return self.profile_photo.url
+            except Exception:
+                return f"/media/{url}"
+        name = self.get_full_name() or self.username
+        return f"https://ui-avatars.com/api/?name={name.replace(' ', '+')}&background=4f46e5&color=fff&bold=true&size=128"
+
 
 
 class PhoneVerification(models.Model):
