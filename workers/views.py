@@ -120,7 +120,7 @@ def worker_detail(request, pk):
     total_revenue = 0
 
     if is_admin:
-        bookings = Booking.objects.filter(worker=worker.user).select_related('customer', 'service').order_by('-created_at')
+        bookings = Booking.objects.filter(worker=worker.user).select_related('customer', 'service_category').order_by('-created_at')
         insurance_policies = WorkerInsurance.objects.filter(worker=worker).order_by('-valid_till')
         completed_bookings = bookings.filter(status='completed')
         completed_bookings_count = completed_bookings.count()
