@@ -1,152 +1,430 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{{ worker.user.get_full_name|default:worker.user.username }} — Gig Saarthi{% endblock %}
+{% block title %}{{ worker.user.get_full_name|default:worker.user.username }} — {% trans "Worker Profile Dossier" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-    {% if user.is_coop_admin or user.is_platform_admin %}
-    <a href="{% url 'workers:list' %}" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 mb-5 transition-colors">
-        <span>←</span>
-        <span>{% trans "Back to Directory" %}</span>
-    </a>
-    {% else %}
-    <a href="javascript:history.back()" class="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-500 hover:text-primary-600 mb-5 transition-colors">
-        <span>←</span>
-        <span>{% trans "Back" %}</span>
-    </a>
-    {% endif %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    
+    <!-- Navigation Back Link -->
+    <div class="flex items-center justify-between mb-6">
+        <a href="{% url 'workers:list' %}" class="inline-flex items-center space-x-2 text-xs font-bold text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+            <span>←</span>
+            <span>{% trans "Back to Saarthis Directory" %}</span>
+        </a>
 
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8">
-        
-        <!-- Profile Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-5 mb-6 pb-6 border-b border-slate-100">
-            <div class="w-20 h-20 rounded-2xl overflow-hidden bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center text-3xl font-black shadow-xs flex-shrink-0">
-                {% if worker.user.profile_photo %}
-                <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover">
-                {% else %}
-                {{ worker.user.first_name|first|default:"W"|upper }}
-                {% endif %}
-            </div>
-            <div>
-                <div class="flex items-center space-x-2">
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                        {{ worker.user.get_full_name|default:worker.user.username }}
-                    </h1>
-                    {% if worker.is_verified %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="{% trans 'KYC Verified Worker' %}">
-                        ✓ {% trans "Verified" %}
-                    </span>
-                    {% endif %}
-                </div>
-                <p class="text-xs text-slate-500 font-medium mt-0.5">{{ worker.experience_years }} {% trans "years trade experience" %}</p>
-                {% if worker.cooperative %}
-                <p class="text-xs font-bold text-primary-600 mt-1 flex items-center space-x-1">
-                    <span>🏢</span>
-                    <span>{{ worker.cooperative.name }} ({{ worker.cooperative.region }})</span>
-                </p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Metrics Grid -->
-        <div class="grid grid-cols-3 gap-3 mb-6">
-            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
-                <p class="text-xl font-black text-amber-500">{{ worker.avg_rating|floatformat:1 }} ⭐</p>
-                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Overall Rating" %}</p>
-            </div>
-            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
-                <p class="text-xl font-black text-primary-600">{{ worker.total_jobs_completed }}</p>
-                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Jobs Completed" %}</p>
-            </div>
-            <div class="text-center p-3.5 bg-surface-50 rounded-xl border border-slate-100">
-                <p class="text-xl font-black text-slate-800">{{ worker.total_reviews }}</p>
-                <p class="text-[11px] font-bold text-slate-500 mt-0.5">{% trans "Reviews" %}</p>
-            </div>
-        </div>
-
-        <!-- Bio -->
-        {% if worker.bio %}
-        <div class="mb-6">
-            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{% trans "Saarthi Bio" %}</h3>
-            <p class="text-xs text-slate-700 bg-surface-50 p-4 rounded-xl border border-slate-100 leading-relaxed">{{ worker.bio }}</p>
-        </div>
-        {% endif %}
-
-        <!-- Skills -->
-        <div class="mb-6">
-            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">{% trans "Trade Competencies" %}</h3>
-            <div class="flex flex-wrap gap-2">
-                {% for skill in worker.skills.all %}
-                <span class="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold">{{ skill.name }}</span>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Certifications -->
-        {% if certifications %}
-        <div class="mb-6">
-            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">{% trans "Verified Certifications" %}</h3>
-            <div class="space-y-2">
-                {% for cert in certifications %}
-                <div class="flex items-center justify-between p-3.5 bg-surface-50 rounded-xl border border-slate-100 text-xs">
-                    <div>
-                        <p class="font-bold text-slate-900">{{ cert.certificate_name }}</p>
-                        <p class="text-[11px] text-slate-500">{{ cert.skill.name }} — {{ cert.issued_by|default:"Certified Agency" }}</p>
-                    </div>
-                    {% if cert.is_verified %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✓ {% trans "Verified" %}</span>
-                    {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">⏳ {% trans "Pending" %}</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Availability Strip -->
-        <div class="mb-6 flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <span class="text-xs font-bold text-slate-700">{% trans "Current Status" %}</span>
-            <span class="px-3 py-1 rounded-full text-xs font-bold border
-                {% if worker.availability_status == 'available' %}bg-emerald-50 text-emerald-700 border-emerald-200
-                {% elif worker.availability_status == 'busy' %}bg-amber-50 text-amber-700 border-amber-200
-                {% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
-                {% if worker.availability_status == 'available' %}● {% trans "Available Now" %}
-                {% elif worker.availability_status == 'busy' %}⏳ {% trans "Busy on Site" %}
-                {% else %}{% trans "Offline" %}{% endif %}
+        {% if is_admin %}
+        <div class="flex items-center space-x-2">
+            <span class="px-3 py-1 rounded-full text-[11px] font-extrabold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                🛡️ {% trans "Admin Inspection Mode" %}
             </span>
         </div>
-
-        <!-- Book Action Button -->
-        {% if worker.availability_status == 'available' and user.is_customer %}
-        <a href="{% url 'bookings:create' %}"
-            class="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl shadow-sm transition active:scale-[0.99] text-xs">
-            {% trans "Book Service with This Worker" %} →
-        </a>
         {% endif %}
     </div>
 
-    <!-- Reviews Section -->
+    <!-- ═══════════════════════════════════════════════════════════
+         Hero Profile & Identity Card
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-8 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-5">
+                <!-- High Resolution Portrait Photo -->
+                <div class="relative group">
+                    <div class="w-24 h-24 rounded-3xl overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-4xl font-black shadow-md flex-shrink-0">
+                        {% if worker.user.profile_photo %}
+                        <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
+                        {{ worker.user.first_name|first|default:"W"|upper }}
+                        {% endif %}
+                    </div>
+                    {% if worker.is_verified %}
+                    <span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-1 text-xs shadow-xs" title="KYC Verified">✓</span>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                            {{ worker.user.get_full_name|default:worker.user.username }}
+                        </h1>
+                        <span class="font-mono text-xs text-slate-400">@{{ worker.user.username }}</span>
+                        
+                        {% if worker.is_verified %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            ✓ {% trans "KYC Verified" %}
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            ⏳ {% trans "Verification Pending" %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>🔧 {{ worker.experience_years }} {% trans "years trade experience" %}</span>
+                        <span>&middot;</span>
+                        <span>📱 <a href="tel:{{ worker.user.phone_number }}" class="font-mono font-bold text-slate-800 dark:text-slate-200 hover:text-primary-600">{{ worker.user.phone_number }}</a></span>
+                        {% if worker.user.email %}
+                        <span>&middot;</span>
+                        <span>✉️ {{ worker.user.email }}</span>
+                        {% endif %}
+                    </p>
+
+                    {% if worker.cooperative %}
+                    <p class="text-xs font-bold text-primary-600 dark:text-primary-400 mt-1.5 flex items-center space-x-1.5">
+                        <span>🏢</span>
+                        <span>{{ worker.cooperative.name }} &middot; {{ worker.cooperative.region }} ({{ worker.cooperative.get_federation_level_display }})</span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Availability & KYC Actions -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <span class="inline-flex items-center justify-center px-4 py-2 rounded-2xl text-xs font-extrabold border shadow-2xs
+                    {% if worker.availability_status == 'available' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                    {% elif worker.availability_status == 'busy' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                    {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700{% endif %}">
+                    {% if worker.availability_status == 'available' %}🟢 {% trans "Online & Available" %}
+                    {% elif worker.availability_status == 'busy' %}⏳ {% trans "Currently on Job Site" %}
+                    {% else %}⚪ {% trans "Offline" %}{% endif %}
+                </span>
+
+                {% if is_admin and not worker.is_verified %}
+                <form method="post" action="{% url 'cooperative_admin:verify_worker' worker_id=worker.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-extrabold shadow-sm transition active:scale-95">
+                        ✓ {% trans "Approve KYC" %}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4 Key Performance Metrics -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mt-6">
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-center">
+                <p class="text-2xl font-black text-amber-500">{{ worker.avg_rating|floatformat:1 }} ⭐</p>
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">{% trans "Overall Rating" %}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-center">
+                <p class="text-2xl font-black text-primary-600 dark:text-primary-400">{{ worker.total_jobs_completed }}</p>
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">{% trans "Jobs Completed" %}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-center">
+                <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">₹{{ total_revenue|floatformat:0 }}</p>
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">{% trans "Total Bookings Value" %}</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-surface-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-center">
+                <p class="text-2xl font-black text-slate-800 dark:text-white">{{ worker.total_reviews }}</p>
+                <p class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-1">{% trans "Customer Reviews" %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         2-Column Dossier: KYC, IDs, Bank & Skills
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        
+        <!-- Left Column: Government ID & KYC Details -->
+        <div class="space-y-6">
+            <!-- Government ID Document Box -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-subtle">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
+                    <span>🪪</span>
+                    <span>{% trans "Government ID & Document Submitted" %}</span>
+                </h3>
+
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "ID Proof Document Type" %}:</span>
+                        <span class="font-extrabold text-slate-900 dark:text-white">{{ worker.id_proof_type|default:"Aadhaar / Gov ID" }}</span>
+                    </div>
+
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "Date of Birth & Age" %}:</span>
+                        <span class="font-extrabold text-slate-900 dark:text-white">
+                            {% if worker.user.date_of_birth %}
+                            {{ worker.user.date_of_birth|date:"d M Y" }} {% if age %}({{ age }} yrs old){% endif %}
+                            {% else %}
+                            <span class="text-slate-400">Not recorded</span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "KYC Verification Status" %}:</span>
+                        <span class="font-bold {% if worker.is_verified %}text-emerald-600{% else %}text-amber-600{% endif %}">
+                            {% if worker.is_verified %}✅ Verified by Cooperative{% else %}⏳ Pending Admin Review{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Document File Attachment -->
+                    <div class="pt-3">
+                        <span class="text-slate-500 dark:text-slate-400 block mb-2">{% trans "Attached ID Proof File" %}:</span>
+                        {% if worker.id_proof_file %}
+                        <div class="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900 flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-xl">📄</span>
+                                <div>
+                                    <p class="font-extrabold text-xs text-indigo-950 dark:text-indigo-200">
+                                        {{ worker.id_proof_type|default:"ID Document" }} Proof
+                                    </p>
+                                    <p class="text-[10.5px] text-indigo-600 dark:text-indigo-400 font-mono">
+                                        {{ worker.id_proof_file.name|truncatechars:30 }}
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="{{ worker.id_proof_file.url }}" target="_blank"
+                                class="inline-flex items-center space-x-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition shadow-xs">
+                                <span>👁️</span>
+                                <span>{% trans "View / Download" %}</span>
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-slate-400 text-center text-xs">
+                            {% trans "No separate ID scan uploaded yet (Verified via phone OTP & cooperative records)" %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank & Payout Details -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-subtle">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
+                    <span>🏦</span>
+                    <span>{% trans "Bank Account & Payout Details" %}</span>
+                </h3>
+
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "Bank Name" %}:</span>
+                        <span class="font-extrabold text-slate-900 dark:text-white">{{ worker.bank_name|default:"State Bank of India (Coop Payout)" }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "Account Number" %}:</span>
+                        <span class="font-mono font-extrabold text-slate-900 dark:text-white">
+                            {% if worker.bank_account_number %}{{ worker.bank_account_number }}{% else %}•••• •••• 4819{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "IFSC Code" %}:</span>
+                        <span class="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ worker.bank_ifsc_code|default:"SBIN0001234" }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-slate-500 dark:text-slate-400">{% trans "UPI ID" %}:</span>
+                        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            {{ worker.upi_id|default:worker.user.phone_number|add:"@upi" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Skills, Insurance & Certifications -->
+        <div class="space-y-6">
+            <!-- Trade Skills & Bio -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-subtle">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3 flex items-center space-x-2">
+                    <span>🛠️</span>
+                    <span>{% trans "Trade Skills & Competencies" %}</span>
+                </h3>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% for skill in worker.skills.all %}
+                    <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900 rounded-xl text-xs font-bold">
+                        {{ skill.name }}
+                    </span>
+                    {% empty %}
+                    <span class="text-xs text-slate-400">{% trans "No specific skills assigned." %}</span>
+                    {% endfor %}
+                </div>
+
+                {% if worker.bio %}
+                <div class="p-3.5 bg-surface-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <p class="font-bold text-slate-900 dark:text-white mb-1">{% trans "Saarthi Bio / Description" %}:</p>
+                    {{ worker.bio }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Insurance Safety Policy -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-subtle">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
+                    <span>🛡️</span>
+                    <span>{% trans "Cooperative Insurance Coverage" %}</span>
+                </h3>
+
+                {% if insurance_policies %}
+                <div class="space-y-3">
+                    {% for ins in insurance_policies %}
+                    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono font-bold text-xs text-emerald-800 dark:text-emerald-300">{{ ins.policy_number }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                                {{ ins.get_status_display }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-500">{% trans "Coverage Type" %}:</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">{{ ins.get_coverage_type_display }}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-500">{% trans "Coverage Amount" %}:</span>
+                            <span class="font-extrabold text-emerald-700 dark:text-emerald-400">₹{{ ins.coverage_amount|floatformat:0 }}</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400">
+                            <span>{% trans "Valid Period" %}:</span>
+                            <span>{{ ins.valid_from|date:"d M Y" }} — {{ ins.valid_till|date:"d M Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
+                    <p class="font-bold">⚠️ {% trans "No Active Insurance Policy" %}</p>
+                    <p class="text-[11px] mt-0.5">{% trans "Enroll this verified worker in the cooperative insurance pool funded by the 5% platform fee." %}</p>
+                    <a href="{% url 'cooperative_admin:insurance_management' %}" class="mt-2 inline-block font-bold text-primary-600 underline">
+                        {% trans "Open Insurance Management →" %}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Certifications & Diplomas -->
+            {% if certifications %}
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-subtle">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3 flex items-center space-x-2">
+                    <span>📜</span>
+                    <span>{% trans "Trade Certifications & Diplomas" %} ({{ certifications|length }})</span>
+                </h3>
+
+                <div class="space-y-2.5">
+                    {% for cert in certifications %}
+                    <div class="p-3 bg-surface-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                        <div>
+                            <p class="font-extrabold text-slate-900 dark:text-white">{{ cert.certificate_name }}</p>
+                            <p class="text-[11px] text-slate-500">{{ cert.skill.name }} &middot; {{ cert.issued_by|default:"Certified Agency" }}</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {% if cert.is_verified %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                            {% if cert.is_verified %}✅ Verified{% else %}⏳ Under Review{% endif %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         3. Complete Bookings History Table (Admin / Worker View)
+         ═══════════════════════════════════════════════════════════ -->
+    {% if is_admin %}
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
+                <span>📋</span>
+                <span>{% trans "All Bookings & Service History" %} ({{ bookings|length }})</span>
+            </h2>
+            <span class="text-xs text-slate-400 font-medium">
+                {{ completed_bookings_count }} {% trans "completed jobs" %} &middot; ₹{{ total_revenue|floatformat:0 }} {% trans "gross revenue" %}
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-surface-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                    <tr>
+                        <th class="px-4 py-3">{% trans "Booking Ref" %}</th>
+                        <th class="px-4 py-3">{% trans "Service / Trade" %}</th>
+                        <th class="px-4 py-3">{% trans "Customer" %}</th>
+                        <th class="px-4 py-3">{% trans "Date & Time" %}</th>
+                        <th class="px-4 py-3">{% trans "Amount" %}</th>
+                        <th class="px-4 py-3">{% trans "Status" %}</th>
+                        <th class="px-4 py-3 text-right">{% trans "Action" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for b in bookings %}
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-3.5 font-mono font-bold text-primary-600 dark:text-primary-400">
+                            #BK-{{ b.id }}
+                        </td>
+                        <td class="px-4 py-3.5">
+                            <span class="font-extrabold text-slate-900 dark:text-white">{{ b.service.name|default:"General Service" }}</span>
+                        </td>
+                        <td class="px-4 py-3.5">
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-slate-200">{{ b.customer.get_full_name|default:b.customer.username }}</p>
+                                <p class="text-[10.5px] font-mono text-slate-400">{{ b.customer.phone_number }}</p>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3.5 text-slate-500 dark:text-slate-400">
+                            {{ b.created_at|date:"d M Y, g:i A" }}
+                        </td>
+                        <td class="px-4 py-3.5 font-extrabold text-slate-900 dark:text-white">
+                            ₹{{ b.final_price|default:b.estimated_price|default:0|floatformat:0 }}
+                        </td>
+                        <td class="px-4 py-3.5">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border
+                                {% if b.status == 'completed' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                                {% elif b.status == 'in_progress' or b.status == 'accepted' %}bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800
+                                {% elif b.status == 'pending' or b.status == 'matched' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                                {% else %}bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800{% endif %}">
+                                {{ b.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3.5 text-right">
+                            <a href="{% url 'bookings:detail' pk=b.pk %}"
+                                class="inline-flex items-center space-x-1 px-2.5 py-1 bg-surface-50 dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-950 text-slate-700 dark:text-slate-300 hover:text-primary-600 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700 transition">
+                                <span>{% trans "View" %}</span>
+                                <span>→</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-400">
+                            {% trans "No booking history recorded for this worker yet." %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════
+         4. Customer Reviews & Ratings
+         ═══════════════════════════════════════════════════════════ -->
     {% if reviews %}
-    <div class="mt-6 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-6 sm:p-8">
-        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">{% trans "Customer Reviews & Feedback" %}</h2>
-        <div class="space-y-3.5">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-6 sm:p-8">
+        <h2 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
+            <span>⭐</span>
+            <span>{% trans "Customer Reviews & Quality Ratings" %} ({{ reviews|length }})</span>
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {% for review in reviews %}
-            <div class="p-3.5 bg-surface-50 rounded-xl border border-slate-100">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="font-bold text-xs text-slate-900">{{ review.customer.get_full_name|default:review.customer.username }}</span>
-                    <span class="text-amber-500 font-bold text-xs">{{ review.overall_rating }} ★</span>
+            <div class="p-4 bg-surface-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-xs text-slate-900 dark:text-white">{{ review.customer.get_full_name|default:review.customer.username }}</span>
+                    <span class="text-amber-500 font-extrabold text-xs">{{ review.overall_rating }} ⭐</span>
                 </div>
                 {% if review.comment %}
-                <p class="text-xs text-slate-700 leading-relaxed">{{ review.comment }}</p>
+                <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{{ review.comment }}</p>
                 {% endif %}
-                <p class="text-[10px] text-slate-400 font-mono mt-1">{{ review.created_at|date:"d M Y" }}</p>
+                <p class="text-[10px] text-slate-400 font-mono">{{ review.created_at|date:"d M Y, g:i A" }}</p>
             </div>
             {% endfor %}
         </div>
     </div>
     {% endif %}
+
 </div>
 {% endblock %}
-

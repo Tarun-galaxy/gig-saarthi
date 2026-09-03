@@ -9,6 +9,10 @@ from cooperative_admin.models import Cooperative
 from core.services.validation import validate_file_upload
 
 
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+
+
 def is_coop_admin(user):
     """Check if user is a cooperative or platform admin."""
     return getattr(user, 'role', '') in ('coop_admin', 'platform_admin') or getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False)
@@ -16,70 +20,132 @@ def is_coop_admin(user):
 
 @login_required
 def worker_list(request):
-    """Admin-only worker listing page with filters."""
+    """Admin-only worker listing page divided into categories with pagination and full details."""
     if not is_coop_admin(request.user):
         messages.error(request, 'Access restricted. Only cooperative admins can view the Saarthis directory.')
         return redirect('core:dashboard')
 
-    workers = WorkerProfile.objects.filter(
+    all_verified_workers = WorkerProfile.objects.filter(
         user__is_active=True,
         is_verified=True
-    ).select_related('user', 'cooperative').prefetch_related('skills')
+    ).select_related('user', 'cooperative').prefetch_related('skills', 'skills__category')
 
-    # Filter by skill category
-    category = request.GET.get('category')
-    if category:
-        workers = workers.filter(skills__category__name=category).distinct()
+    # Fetch all categories and annotate worker count
+    # Multi-skilled workers count in each category they possess skills for!
+    categories = list(SkillCategory.objects.all())
+    for cat in categories:
+        cat.worker_count = all_verified_workers.filter(skills__category=cat).distinct().count()
 
-    # Filter by skill
-    skill = request.GET.get('skill')
-    if skill:
-        workers = workers.filter(skills__name=skill).distinct()
+    total_all_workers = all_verified_workers.count()
+    workers = all_verified_workers
 
-    # Filter by availability
-    availability = request.GET.get('availability')
-    if availability:
-        workers = workers.filter(availability_status=availability)
-
-    # Search
-    search = request.GET.get('search', '').strip()
-    if search:
-        from django.db.models import Q
+    # Category filter (e.g. Plumbing, Electrical, Carpentry, Cleaning)
+    selected_category = request.GET.get('category', '').strip()
+    if selected_category and selected_category != 'all':
         workers = workers.filter(
-            Q(user__first_name__icontains=search) |
-            Q(user__last_name__icontains=search) |
-            Q(skills__name__icontains=search) |
-            Q(bio__icontains=search)
+            Q(skills__category__name__iexact=selected_category) |
+            Q(skills__category__id__iexact=selected_category if selected_category.isdigit() else -1)
         ).distinct()
 
-    categories = SkillCategory.objects.all()
+    # Skill filter
+    selected_skill = request.GET.get('skill', '').strip()
+    if selected_skill:
+        workers = workers.filter(skills__name__iexact=selected_skill).distinct()
+
+    # Availability filter
+    availability = request.GET.get('availability', '').strip()
+    if availability in ('available', 'busy', 'offline'):
+        workers = workers.filter(availability_status=availability)
+
+    # Search filter (name, phone, skills, cooperative, bio)
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        workers = workers.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__username__icontains=search_query) |
+            Q(user__phone_number__icontains=search_query) |
+            Q(skills__name__icontains=search_query) |
+            Q(cooperative__name__icontains=search_query) |
+            Q(bio__icontains=search_query)
+        ).distinct()
+
+    # Sort
+    sort_by = request.GET.get('sort', '-avg_rating')
+    if sort_by in ('-avg_rating', 'avg_rating', '-total_jobs_completed', '-created_at'):
+        workers = workers.order_by(sort_by)
+    else:
+        workers = workers.order_by('-avg_rating', '-total_jobs_completed')
+
+    # Pagination (9 workers per page)
+    paginator = Paginator(workers, 9)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        'workers': workers,
+        'workers': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
         'categories': categories,
-        'selected_category': category,
-        'selected_skill': skill,
-        'search_query': search,
+        'total_all_workers': total_all_workers,
+        'selected_category': selected_category,
+        'selected_skill': selected_skill,
+        'availability': availability,
+        'search_query': search_query,
+        'sort_by': sort_by,
     }
     return render(request, 'workers/worker_list.html', context)
 
 
 def worker_detail(request, pk):
-    """Public worker profile page."""
+    """Worker detail page — shows all personal, KYC, skills, IDs submitted, insurance, and booking details for Admins."""
+    from bookings.models import Booking
+    from workers.models import WorkerInsurance
+
     worker = get_object_or_404(
-        WorkerProfile.objects.select_related('user', 'cooperative').prefetch_related('skills'),
+        WorkerProfile.objects.select_related('user', 'cooperative').prefetch_related('skills', 'skills__category'),
         pk=pk,
         user__is_active=True
     )
     certifications = worker.certifications.select_related('skill').all()
-    reviews = worker.user.reviews_received.select_related('customer')[:10]
+    reviews = worker.user.reviews_received.select_related('customer')[:20]
+
+    is_admin = request.user.is_authenticated and (is_coop_admin(request.user) or request.user == worker.user)
+
+    # If admin or worker self, fetch bookings and insurance records
+    bookings = []
+    insurance_policies = []
+    completed_bookings_count = 0
+    total_revenue = 0
+
+    if is_admin:
+        bookings = Booking.objects.filter(worker=worker.user).select_related('customer', 'service').order_by('-created_at')
+        insurance_policies = WorkerInsurance.objects.filter(worker=worker).order_by('-valid_till')
+        completed_bookings = bookings.filter(status='completed')
+        completed_bookings_count = completed_bookings.count()
+        total_revenue = sum(float(b.final_price or b.estimated_price or 0) for b in completed_bookings)
+
+    # Calculate age if DOB exists
+    age = None
+    if worker.user.date_of_birth:
+        from django.utils import timezone
+        today = timezone.now().date()
+        dob = worker.user.date_of_birth
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
     context = {
         'worker': worker,
         'certifications': certifications,
         'reviews': reviews,
+        'bookings': bookings,
+        'insurance_policies': insurance_policies,
+        'completed_bookings_count': completed_bookings_count,
+        'total_revenue': total_revenue,
+        'age': age,
+        'is_admin': is_admin,
     }
     return render(request, 'workers/worker_detail.html', context)
+
 
 
 @login_required

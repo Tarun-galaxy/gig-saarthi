@@ -1,114 +1,298 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Find Workers" %} — Gig Saarthi{% endblock %}
+{% block title %}{% trans "Admin Saarthis Directory" %} — Gig Saarthi{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-    <div class="mb-8">
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">🔍 {% trans "Verified Saarthis Directory" %}</h1>
+    
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">👷</span>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        {% trans "Saarthis & Workers Directory" %}
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                        {% trans "Browse, filter by trade category, and review KYC and booking records for all cooperative workers." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <span class="inline-flex items-center px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold shadow-2xs">
+                <span>Total Active Saarthis:</span>
+                <span class="ml-1.5 font-extrabold text-sm text-primary-600 dark:text-primary-400">{{ total_all_workers }}</span>
+            </span>
+            <a href="{% url 'cooperative_admin:worker_verification' %}"
+                class="inline-flex items-center space-x-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95">
+                <span>🪪</span>
+                <span>{% trans "Pending KYC Queue" %}</span>
+            </a>
+        </div>
     </div>
 
-    <!-- Filters Bar -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-4 sm:p-5 mb-8">
-        <form method="get" class="flex flex-wrap items-center gap-3">
-            <div class="flex-1 min-w-[200px]">
-                <select name="category" class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-primary-500">
-                    <option value="">{% trans "All Trade Categories" %}</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
-                        {{ cat.icon }} {{ cat.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+    <!-- ═══════════════════════════════════════════════════════════
+         1. Category Navigation Tabs (Multi-Skilled Grouping)
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-subtle mb-6">
+        <div class="flex items-center space-x-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-thin">
+            <!-- All Categories Tab -->
+            <a href="?category=all{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all shadow-2xs
+                {% if not selected_category or selected_category == 'all' %}
+                bg-primary-600 text-white shadow-sm scale-[1.02]
+                {% else %}
+                bg-surface-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/60 dark:border-slate-700
+                {% endif %}">
+                <span>✨</span>
+                <span>{% trans "All Workers" %}</span>
+                <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black {% if not selected_category or selected_category == 'all' %}bg-white/20 text-white{% else %}bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300{% endif %}">
+                    {{ total_all_workers }}
+                </span>
+            </a>
+
+            <!-- Individual Trade Categories -->
+            {% for cat in categories %}
+            <a href="?category={{ cat.name }}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all shadow-2xs
+                {% if selected_category == cat.name %}
+                bg-primary-600 text-white shadow-sm scale-[1.02]
+                {% else %}
+                bg-surface-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/60 dark:border-slate-700
+                {% endif %}">
+                <span>{{ cat.icon|default:"🔧" }}</span>
+                <span>{{ cat.name }}</span>
+                <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-black {% if selected_category == cat.name %}bg-white/20 text-white{% else %}bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300{% endif %}">
+                    {{ cat.worker_count }}
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         2. Filter & Search Toolbar
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-subtle mb-8">
+        <form method="get" class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            <input type="hidden" name="category" value="{{ selected_category|default:'all' }}">
+
+            <!-- Search Input -->
+            <div class="relative flex-1">
+                <input type="text" name="search" value="{{ search_query }}"
+                    placeholder="{% trans 'Search by worker name, phone number, skill, or cooperative...' %}"
+                    class="w-full pl-10 pr-4 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-primary-500">
+                <span class="absolute left-3.5 top-3 text-slate-400">🔍</span>
             </div>
-            
-            <div class="w-48">
-                <select name="availability" class="w-full px-4 py-2.5 bg-surface-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-primary-500">
+
+            <!-- Availability Dropdown -->
+            <div class="w-full sm:w-48">
+                <select name="availability" class="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500">
                     <option value="">{% trans "All Availability" %}</option>
-                    <option value="available">{% trans "Available Online" %}</option>
-                    <option value="busy">{% trans "Busy on Site" %}</option>
+                    <option value="available" {% if availability == 'available' %}selected{% endif %}>🟢 {% trans "Online / Ready" %}</option>
+                    <option value="busy" {% if availability == 'busy' %}selected{% endif %}>⏳ {% trans "Busy on Site" %}</option>
+                    <option value="offline" {% if availability == 'offline' %}selected{% endif %}>⚪ {% trans "Offline" %}</option>
                 </select>
             </div>
 
-            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm transition active:scale-[0.98]">
-                {% trans "Apply Filters" %}
+            <!-- Sort By -->
+            <div class="w-full sm:w-48">
+                <select name="sort" class="w-full px-3.5 py-2.5 bg-surface-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-primary-500">
+                    <option value="-avg_rating" {% if sort_by == '-avg_rating' %}selected{% endif %}>⭐ {% trans "Top Rated First" %}</option>
+                    <option value="-total_jobs_completed" {% if sort_by == '-total_jobs_completed' %}selected{% endif %}>🏆 {% trans "Most Jobs Completed" %}</option>
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>🆕 {% trans "Recently Joined" %}</option>
+                </select>
+            </div>
+
+            <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition active:scale-[0.98]">
+                {% trans "Filter Results" %}
             </button>
+
+            {% if selected_category or search_query or availability %}
+            <a href="{% url 'workers:list' %}" class="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold text-center transition">
+                ✕ {% trans "Reset" %}
+            </a>
+            {% endif %}
         </form>
     </div>
 
-    <!-- Worker Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <!-- Active Filter Badge -->
+    <div class="flex items-center justify-between mb-4">
+        <p class="text-xs font-bold text-slate-500 dark:text-slate-400">
+            Showing <span class="font-extrabold text-slate-900 dark:text-white">{{ workers|length }}</span> of <span class="font-extrabold text-slate-900 dark:text-white">{{ paginator.count }}</span> Saarthis
+            {% if selected_category and selected_category != 'all' %}in trade: <span class="text-primary-600 dark:text-primary-400 font-extrabold uppercase">{{ selected_category }}</span>{% endif %}
+        </p>
+        <span class="text-xs text-slate-400 font-medium">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         3. Worker Cards Grid
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {% for worker in workers %}
-        <div class="bg-white rounded-2xl border border-slate-200/80 hover:border-primary-300 shadow-subtle hover:shadow-card transition-all p-6 flex flex-col justify-between group">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 hover:border-primary-400 dark:hover:border-primary-500 shadow-subtle hover:shadow-card transition-all p-5 flex flex-col justify-between group">
             <div>
+                <!-- Top Identity Bar -->
                 <div class="flex items-start justify-between mb-4">
                     <div class="flex items-center space-x-3.5">
-                        <div class="w-12 h-12 rounded-2xl overflow-hidden bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center font-extrabold text-base shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <div class="w-14 h-14 rounded-2xl overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-2 border-indigo-100 dark:border-indigo-800 flex items-center justify-center font-black text-lg shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                             {% if worker.user.profile_photo %}
                             <img src="{{ worker.user.photo_url }}" alt="{{ worker.user.username }}" class="w-full h-full object-cover">
                             {% else %}
-                            {{ worker.user.first_name|first|default:"W" }}
+                            {{ worker.user.first_name|first|default:"W"|upper }}
                             {% endif %}
                         </div>
                         <div>
                             <div class="flex items-center space-x-1.5">
-                                <h3 class="font-extrabold text-sm text-slate-900 group-hover:text-primary-600 transition-colors">
+                                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-primary-600 transition-colors">
                                     {{ worker.user.get_full_name|default:worker.user.username }}
                                 </h3>
                                 {% if worker.is_verified %}
-                                <span class="text-emerald-600 text-xs" title="{% trans 'Verified Worker' %}">✅</span>
+                                <span class="text-emerald-600 text-xs" title="{% trans 'KYC Verified Worker' %}">✅</span>
                                 {% endif %}
                             </div>
-                            <p class="text-xs text-slate-500 mt-0.5">{{ worker.experience_years }} {% trans "years experience" %}</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                {{ worker.experience_years }} {% trans "years trade exp" %} &middot; <span class="font-mono text-slate-400">@{{ worker.user.username }}</span>
+                            </p>
                         </div>
                     </div>
 
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border
-                        {% if worker.availability_status == 'available' %}bg-emerald-50 text-emerald-700 border-emerald-200
-                        {% elif worker.availability_status == 'busy' %}bg-amber-50 text-amber-700 border-amber-200
-                        {% else %}bg-slate-100 text-slate-600 border-slate-200{% endif %}">
+                    <!-- Online Status Badge -->
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold border
+                        {% if worker.availability_status == 'available' %}bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800
+                        {% elif worker.availability_status == 'busy' %}bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800
+                        {% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700{% endif %}">
                         {% if worker.availability_status == 'available' %}● {% trans "Online" %}
                         {% elif worker.availability_status == 'busy' %}⏳ {% trans "Busy" %}
-                        {% else %}{% trans "Offline" %}{% endif %}
+                        {% else %}⚪ {% trans "Offline" %}{% endif %}
                     </span>
                 </div>
 
-                <!-- Skills -->
-                <div class="flex flex-wrap gap-1.5 mb-4">
-                    {% for skill in worker.skills.all|slice:":3" %}
-                    <span class="px-2 py-0.5 bg-surface-100 text-slate-700 rounded-md text-[11px] font-medium border border-slate-200/60">{{ skill.name }}</span>
-                    {% endfor %}
-                    {% if worker.skills.count > 3 %}
-                    <span class="px-2 py-0.5 bg-surface-100 text-slate-500 rounded-md text-[11px] font-medium border border-slate-200/60">+{{ worker.skills.count|add:"-3" }}</span>
-                    {% endif %}
+                <!-- Contact & Location Box -->
+                <div class="p-3 bg-surface-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-1.5 mb-3.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">📱 Mobile:</span>
+                        <a href="tel:{{ worker.user.phone_number }}" class="font-mono font-bold text-slate-900 dark:text-white hover:text-primary-600">
+                            {{ worker.user.phone_number }}
+                        </a>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">🏢 Cooperative:</span>
+                        <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[160px]" title="{{ worker.cooperative.name|default:'Unassigned' }}">
+                            {{ worker.cooperative.name|default:"Direct / Unassigned" }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">📍 Location:</span>
+                        <span class="text-[11px] font-mono text-slate-500">
+                            {{ worker.current_latitude|floatformat:2 }}, {{ worker.current_longitude|floatformat:2 }} (Delhi NCR)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Trade Skills Badges -->
+                <div class="mb-4">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{% trans "Skills & Trade Categories" %}</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for skill in worker.skills.all|slice:":4" %}
+                        <span class="px-2 py-0.5 bg-indigo-50/80 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-[10.5px] font-bold border border-indigo-100 dark:border-indigo-900">
+                            {{ skill.name }}
+                        </span>
+                        {% endfor %}
+                        {% if worker.skills.count > 4 %}
+                        <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg text-[10px] font-extrabold border border-slate-200 dark:border-slate-700">
+                            +{{ worker.skills.count|add:"-4" }}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
+            <!-- Bottom Stats & Profile Link -->
             <div>
-                <!-- Rating & Jobs -->
-                <div class="flex items-center justify-between text-xs font-semibold text-slate-600 py-3 border-t border-slate-100 mb-3">
-                    <span class="text-amber-500 font-bold flex items-center space-x-1">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 py-3 border-t border-slate-100 dark:border-slate-800 mb-3">
+                    <span class="text-amber-500 font-extrabold flex items-center space-x-1">
                         <span>⭐</span>
-                        <span class="text-slate-800">{{ worker.avg_rating|floatformat:1 }}</span>
+                        <span class="text-slate-900 dark:text-white font-black">{{ worker.avg_rating|floatformat:1 }}</span>
+                        <span class="text-slate-400 font-normal">({{ worker.total_reviews }} reviews)</span>
                     </span>
-                    <span class="text-slate-500">{{ worker.total_jobs_completed }} {% trans "jobs completed" %}</span>
+                    <span class="text-slate-700 dark:text-slate-300">
+                        🏆 <span class="font-extrabold text-primary-600 dark:text-primary-400">{{ worker.total_jobs_completed }}</span> {% trans "jobs completed" %}
+                    </span>
                 </div>
 
                 <a href="{% url 'workers:detail' pk=worker.pk %}"
-                    class="block w-full text-center bg-surface-50 hover:bg-primary-600 hover:text-white text-slate-800 border border-slate-200 hover:border-primary-600 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98]">
-                    {% trans "View Full Profile" %} →
+                    class="block w-full text-center bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition active:scale-[0.98]">
+                    {% trans "View Complete Profile & Bookings" %} →
                 </a>
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-200/80 shadow-subtle p-8">
+        <div class="col-span-full text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-subtle p-8">
             <p class="text-4xl mb-3">🔍</p>
-            <h3 class="text-sm font-bold text-slate-800 mb-1">{% trans "No Saarthis found" %}</h3>
-            <p class="text-xs text-slate-500">{% trans "No Saarthis currently match your selected filters. Try broadening your criteria." %}</p>
+            <h3 class="text-base font-extrabold text-slate-800 dark:text-white mb-1">{% trans "No Saarthis found" %}</h3>
+            <p class="text-xs text-slate-500">{% trans "No workers match the selected category or filters. Try clearing search filters." %}</p>
+            <a href="{% url 'workers:list' %}" class="mt-4 inline-block px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold">
+                {% trans "View All Workers" %}
+            </a>
         </div>
         {% endfor %}
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         4. Pagination Controls
+         ═══════════════════════════════════════════════════════════ -->
+    {% if paginator.num_pages > 1 %}
+    <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 mt-8 pt-6">
+        <div>
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                <span>←</span>
+                <span>{% trans "Previous" %}</span>
+            </a>
+            {% else %}
+            <span class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-400 cursor-not-allowed">
+                <span>←</span>
+                <span>{% trans "Previous" %}</span>
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center space-x-1">
+            {% for num in paginator.page_range %}
+                {% if num == page_obj.number %}
+                <span class="w-8 h-8 rounded-xl bg-primary-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs">
+                    {{ num }}
+                </span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                    class="w-8 h-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center transition">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if availability %}&availability={{ availability }}{% endif %}"
+                class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                <span>{% trans "Next" %}</span>
+                <span>→</span>
+            </a>
+            {% else %}
+            <span class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-400 cursor-not-allowed">
+                <span>{% trans "Next" %}</span>
+                <span>→</span>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
-
