@@ -117,8 +117,12 @@
             {% for policy in pending_policies %}
             <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800/80 gap-3 shadow-xs">
                 <div class="flex items-center space-x-3.5">
-                    <div class="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center text-lg font-black border border-amber-200 dark:border-amber-800 flex-shrink-0">
+                    <div class="w-11 h-11 rounded-xl overflow-hidden bg-amber-100 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200 flex items-center justify-center text-lg font-black border border-amber-200 dark:border-amber-800 flex-shrink-0">
+                        {% if policy.worker.user.profile_photo %}
+                        <img src="{{ policy.worker.user.photo_url }}" alt="{{ policy.worker.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
                         {{ policy.worker.user.first_name|first|default:policy.worker.user.username|first|upper }}
+                        {% endif %}
                     </div>
                     <div>
                         <div class="flex items-center space-x-2">
@@ -165,8 +169,12 @@
             {% for wp in workers_without_insurance %}
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 gap-3">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-base font-black border border-indigo-100 dark:border-indigo-800">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-base font-black border border-indigo-100 dark:border-indigo-800 flex-shrink-0">
+                        {% if wp.user.profile_photo %}
+                        <img src="{{ wp.user.photo_url }}" alt="{{ wp.user.username }}" class="w-full h-full object-cover">
+                        {% else %}
                         {{ wp.user.first_name|first|default:wp.user.username|first|upper }}
+                        {% endif %}
                     </div>
                     <div>
                         <p class="text-xs font-bold text-slate-900 dark:text-white">{{ wp.user.get_full_name|default:wp.user.username }}</p>
@@ -225,8 +233,12 @@
                     <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td class="px-4 py-3">
                             <div class="flex items-center space-x-2">
-                                <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-black border border-indigo-100 dark:border-indigo-800">
+                                <div class="w-7 h-7 rounded-lg overflow-hidden bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-black border border-indigo-100 dark:border-indigo-800 flex-shrink-0">
+                                    {% if policy.worker.user.profile_photo %}
+                                    <img src="{{ policy.worker.user.photo_url }}" alt="{{ policy.worker.user.username }}" class="w-full h-full object-cover">
+                                    {% else %}
                                     {{ policy.worker.user.first_name|first|default:"W"|upper }}
+                                    {% endif %}
                                 </div>
                                 <span class="font-bold text-slate-800 dark:text-white">{{ policy.worker.user.get_full_name|default:policy.worker.user.username }}</span>
                             </div>
